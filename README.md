@@ -1,4 +1,4 @@
-# Face Mesh
+# Kitty Mesh :3333
 
 An on-device webcam experiment that recognizes expressions and body poses, triggers original visual and audio reactions, and exposes its real runtime path through a mapped source-code visualization.
 
