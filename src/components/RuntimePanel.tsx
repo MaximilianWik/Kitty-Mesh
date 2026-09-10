@@ -45,7 +45,7 @@ export function RuntimePanel({ snapshot, events }: RuntimePanelProps) {
 
       <div className="source-window" aria-live="off">
         {activeModule.lines.map((line) => {
-          const active = line.step === snapshot.activeStep
+          const active = line.step === displayedStep
           return (
             <div className={`source-line${active ? ' is-active' : ''}`} key={line.number}>
               <span className="source-line__number">{line.number}</span>

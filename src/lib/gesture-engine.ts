@@ -188,7 +188,7 @@ export class GestureStabilizer {
       this.candidateSince = now
     }
 
-    const requiredHold = candidate === 'blank' ? 760 : candidate === 'spin' ? 0 : 360
+    const requiredHold = candidate === 'blank' ? 760 : candidate === 'spin' ? 180 : 360
     const leavingHold = candidate === 'idle' ? 260 : requiredHold
     const canChange = now - this.lastChangeAt > 420
 

@@ -21,6 +21,7 @@ function App() {
   const videoRef = useRef<HTMLVideoElement>(null)
   const streamRef = useRef<MediaStream | null>(null)
   const runtimeRef = useRef<VisionRuntime | null>(null)
+  const startingRef = useRef(false)
   const previousGesture = useRef<GestureId>('idle')
   const [status, setStatus] = useState<TrackingStatus>('idle')
   const [statusMessage, setStatusMessage] = useState('Camera is off. Nothing leaves this device.')
@@ -59,12 +60,14 @@ function App() {
   }, [audioEnabled, snapshot.gesture])
 
   const startCamera = async () => {
+    if (startingRef.current || status === 'running') return
     if (!navigator.mediaDevices?.getUserMedia) {
       setStatus('error')
       setStatusMessage('This browser does not support camera access.')
       return
     }
 
+    startingRef.current = true
     setStatus('loading')
     setStatusMessage('Loading face and pose models…')
 
@@ -83,6 +86,11 @@ function App() {
       streamRef.current = stream
       const video = videoRef.current!
       video.srcObject = stream
+      if (video.readyState < HTMLMediaElement.HAVE_METADATA) {
+        await new Promise<void>((resolve) => {
+          video.addEventListener('loadedmetadata', () => resolve(), { once: true })
+        })
+      }
       await video.play()
       setVideoSize({ width: video.videoWidth, height: video.videoHeight })
       runtimeRef.current!.start(video)
@@ -93,6 +101,8 @@ function App() {
       streamRef.current = null
       setStatus('error')
       setStatusMessage(describeCameraError(error))
+    } finally {
+      startingRef.current = false
     }
   }
 

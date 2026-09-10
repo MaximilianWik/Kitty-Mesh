@@ -80,6 +80,7 @@ export class VisionRuntime {
       minTrackingConfidence: 0.48,
       outputSegmentationMasks: false,
     })
+    this.loaded = true
   }
 
   start(video: HTMLVideoElement) {
