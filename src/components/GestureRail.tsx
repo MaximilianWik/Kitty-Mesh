@@ -11,45 +11,28 @@ interface GestureRailProps {
 
 export function GestureRail({ active, candidate, scores, spinStage, spinProgress }: GestureRailProps) {
   return (
-    <section className="gesture-rail" aria-labelledby="gesture-title">
-      <div className="gesture-rail__heading">
-        <div>
-          <span className="section-label">SIGNAL MAP</span>
-          <h2 id="gesture-title">Try a state</h2>
-        </div>
-        <span>{candidate === 'idle' ? 'searching' : `candidate: ${candidate}`}</span>
-      </div>
-
-      <div className="gesture-list">
+    <section className="signals-pane" aria-labelledby="signals-title">
+      <header className="pane-titlebar">
+        <span id="signals-title">signals.watch</span>
+        <span>candidate: {candidate}</span>
+      </header>
+      <div className="signal-table">
+        <div className="signal-table__head"><span>state</span><span>score</span><span>level</span></div>
         {REACTIONS.map((reaction) => {
           const score = scores[reaction.id]
-          const selected = active === reaction.id
           return (
-            <article className={`gesture-row${selected ? ' is-selected' : ''}`} key={reaction.id}>
-              <span className="gesture-row__symbol" aria-hidden="true">{reaction.symbol}</span>
-              <div className="gesture-row__copy">
-                <strong>{reaction.label}</strong>
-                <span>{reaction.prompt}</span>
-              </div>
-              <div className="gesture-row__meter" aria-label={`${reaction.label} ${Math.round(score * 100)} percent`}>
-                <i style={{ '--score-number': Math.round(score * 100) } as React.CSSProperties} />
-              </div>
-              <output>{Math.round(score * 100)}</output>
-            </article>
+            <div className={active === reaction.id ? 'is-active' : ''} key={reaction.id}>
+              <span>{reaction.id}</span>
+              <output>{score.toFixed(2)}</output>
+              <meter min="0" max="1" value={score}>{Math.round(score * 100)}%</meter>
+            </div>
           )
         })}
       </div>
-
-      <div className="spin-sequence">
-        <div>
-          <span>360 sequence</span>
-          <strong>{spinStage.replaceAll('-', ' ')}</strong>
-        </div>
-        <div className="spin-track" aria-label={`360 turn ${Math.round(spinProgress * 100)} percent complete`}>
-          <i style={{ '--progress-number': spinProgress * 100 } as React.CSSProperties} />
-        </div>
-        <small>Front → first side → back/hidden → opposite side → front</small>
-      </div>
+      <footer className="spin-status">
+        <span>360: {spinStage}</span>
+        <progress max="1" value={spinProgress}>{Math.round(spinProgress * 100)}%</progress>
+      </footer>
     </section>
   )
 }

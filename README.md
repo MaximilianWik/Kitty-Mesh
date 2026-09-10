@@ -91,8 +91,9 @@ src/
 ├── components/
 │   ├── GestureRail.tsx       confidence and 360 progress
 │   ├── LandmarkLayer.tsx     responsive face and pose canvas
-│   ├── ReactionOverlay.tsx   built-in visual reactions
-│   └── RuntimePanel.tsx      truthful mapped execution view
+│   ├── MatchOutput.tsx       dedicated matched-pose view
+│   ├── PoseFigure.tsx        six inline pose references
+│   └── RuntimePanel.tsx      mapped source execution view
 ├── lib/
 │   ├── audio.ts              synthesized Web Audio cues
 │   ├── gesture-engine.ts     signal extraction and state machines
@@ -107,12 +108,12 @@ The app processes face frames at up to 20 Hz and pose frames at up to 12 Hz to r
 
 ## Replace or extend reactions
 
-Built-in reactions use CSS, text symbols, and locally synthesized tones, so the project ships without copyrighted media.
+Built-in pose references use inline SVG and audio cues use locally synthesized tones, so the project ships without copyrighted media.
 
-1. Add images, GIFs, or audio under `public/reactions/`.
+1. Add optional audio files under `public/reactions/`.
 2. Extend `ReactionDefinition` in `src/lib/reactions.ts` with asset paths.
-3. Render those fields in `src/components/ReactionOverlay.tsx`.
-4. Keep audio opt-in and include descriptive alternative text for visual media.
+3. Play those fields from the view that owns the match state.
+4. Keep audio opt-in and include descriptive text for added visual media.
 
 Gesture thresholds live in `src/lib/gesture-engine.ts`. Adjust one signal at a time and verify across multiple users and lighting conditions.
 

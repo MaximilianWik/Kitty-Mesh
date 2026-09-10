@@ -30,59 +30,36 @@ export function RuntimePanel({ snapshot, events }: RuntimePanelProps) {
   const activeModule = STEP_MODULE.get(displayedStep) ?? RUNTIME_MODULES[0]
 
   return (
-    <aside className="runtime" aria-label="Mapped runtime visualization">
-      <header className="runtime__header">
-        <div>
-          <span className="runtime__live"><i /> MAPPED RUNTIME</span>
-          <h2>{activeModule.path}</h2>
-        </div>
-        <span className="runtime__rate">{snapshot.fps.toFixed(0)} FPS</span>
+    <section className="runtime-pane" aria-labelledby="runtime-title">
+      <header className="pane-titlebar">
+        <span id="runtime-title">{activeModule.path}</span>
+        <span>{snapshot.fps.toFixed(0)} fps</span>
       </header>
-
-      <p className="runtime__disclosure">
-        Source map of real app events, not a JavaScript interpreter or debugger.
-      </p>
-
-      <div className="source-window" aria-live="off">
-        {activeModule.lines.map((line) => {
-          const active = line.step === displayedStep
-          return (
-            <div className={`source-line${active ? ' is-active' : ''}`} key={line.number}>
-              <span className="source-line__number">{line.number}</span>
-              <code>{line.code}</code>
-              {active && <span className="source-line__pulse" aria-label="Executing now" />}
-            </div>
-          )
-        })}
+      <div className="source-window" aria-label="Current source path">
+        {activeModule.lines.map((line) => (
+          <div className={line.step === displayedStep ? 'is-active' : ''} key={line.number}>
+            <span>{line.number}</span>
+            <code>{line.code}</code>
+            <i aria-hidden="true">{line.step === displayedStep ? '>' : ''}</i>
+          </div>
+        ))}
       </div>
-
-      <div className="runtime__metrics" aria-label="Runtime counters">
-        <Metric label="frame" value={snapshot.counters.frames} />
-        <Metric label="face" value={snapshot.counters.faceCalls} />
-        <Metric label="pose" value={snapshot.counters.poseCalls} />
-        <Metric label="state" value={snapshot.counters.transitions} />
-        <Metric label="latency" value={`${snapshot.latencyMs.toFixed(0)}ms`} />
-        <Metric label="candidate" value={snapshot.candidate} />
+      <div className="runtime-footer">
+        <span>frame {snapshot.counters.frames}</span>
+        <span>face {snapshot.counters.faceCalls}</span>
+        <span>pose {snapshot.counters.poseCalls}</span>
+        <span>state {snapshot.counters.transitions}</span>
+        <span>{snapshot.latencyMs.toFixed(0)} ms</span>
       </div>
-
-      <div className="event-log" aria-label="Recent runtime events">
-        {events.slice(-5).reverse().map((event) => (
-          <div className="event-log__row" key={event.id}>
+      <div className="event-log" aria-label="Recent events">
+        {events.slice(-4).reverse().map((event) => (
+          <div key={event.id}>
             <span>{String(event.id).padStart(4, '0')}</span>
-            <b>{event.label}</b>
+            <span>{event.label}</span>
             <output>{event.value}</output>
           </div>
         ))}
       </div>
-    </aside>
-  )
-}
-
-function Metric({ label, value }: { label: string; value: string | number }) {
-  return (
-    <div>
-      <span>{label}</span>
-      <strong>{value}</strong>
-    </div>
+    </section>
   )
 }

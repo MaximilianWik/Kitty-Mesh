@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { GestureRail } from './components/GestureRail'
 import { LandmarkLayer } from './components/LandmarkLayer'
-import { ReactionOverlay } from './components/ReactionOverlay'
+import { MatchOutput } from './components/MatchOutput'
 import { RuntimePanel } from './components/RuntimePanel'
 import { playReactionTone, unlockAudio } from './lib/audio'
 import { REACTION_BY_ID } from './lib/reactions'
@@ -16,6 +16,7 @@ import { INITIAL_SNAPSHOT } from './lib/types'
 import { describeCameraError, stopMediaStream, VisionRuntime } from './lib/vision'
 
 const EMPTY_LANDMARKS: FrameLandmarks = { face: [], pose: [] }
+type AppView = 'camera' | 'output'
 
 function App() {
   const videoRef = useRef<HTMLVideoElement>(null)
@@ -23,8 +24,10 @@ function App() {
   const runtimeRef = useRef<VisionRuntime | null>(null)
   const startingRef = useRef(false)
   const previousGesture = useRef<GestureId>('idle')
+  const [view, setView] = useState<AppView>('camera')
+  const [lastMatch, setLastMatch] = useState<Exclude<GestureId, 'idle'> | null>(null)
   const [status, setStatus] = useState<TrackingStatus>('idle')
-  const [statusMessage, setStatusMessage] = useState('Camera is off. Nothing leaves this device.')
+  const [statusMessage, setStatusMessage] = useState('Camera stopped')
   const [snapshot, setSnapshot] = useState<VisionSnapshot>(INITIAL_SNAPSHOT)
   const [landmarks, setLandmarks] = useState<FrameLandmarks>(EMPTY_LANDMARKS)
   const [events, setEvents] = useState<RuntimeEvent[]>([])
@@ -35,6 +38,7 @@ function App() {
   const handleSnapshot = useCallback((next: VisionSnapshot, points: FrameLandmarks) => {
     setSnapshot(next)
     setLandmarks(points)
+    if (next.gesture !== 'idle') setLastMatch(next.gesture)
   }, [])
 
   const handleEvent = useCallback((event: RuntimeEvent) => {
@@ -63,25 +67,21 @@ function App() {
     if (startingRef.current || status === 'running') return
     if (!navigator.mediaDevices?.getUserMedia) {
       setStatus('error')
-      setStatusMessage('This browser does not support camera access.')
+      setStatusMessage('Camera API unavailable')
       return
     }
 
     startingRef.current = true
     setStatus('loading')
-    setStatusMessage('Loading face and pose models…')
+    setStatusMessage('Loading models')
 
     try {
       await runtimeRef.current!.load()
       setStatus('requesting')
-      setStatusMessage('Waiting for camera permission…')
+      setStatusMessage('Waiting for camera permission')
       const stream = await navigator.mediaDevices.getUserMedia({
         audio: false,
-        video: {
-          facingMode: 'user',
-          width: { ideal: 1280 },
-          height: { ideal: 720 },
-        },
+        video: { facingMode: 'user', width: { ideal: 1280 }, height: { ideal: 720 } },
       })
       streamRef.current = stream
       const video = videoRef.current!
@@ -95,7 +95,7 @@ function App() {
       setVideoSize({ width: video.videoWidth, height: video.videoHeight })
       runtimeRef.current!.start(video)
       setStatus('running')
-      setStatusMessage('Tracking locally. Your camera frames are never uploaded.')
+      setStatusMessage('Tracking')
     } catch (error) {
       stopMediaStream(streamRef.current)
       streamRef.current = null
@@ -115,7 +115,7 @@ function App() {
     setSnapshot(INITIAL_SNAPSHOT)
     setLandmarks(EMPTY_LANDMARKS)
     setEvents([])
-    setStatusMessage('Camera is off. Nothing leaves this device.')
+    setStatusMessage('Camera stopped')
   }
 
   const toggleAudio = async () => {
@@ -123,113 +123,97 @@ function App() {
     setAudioEnabled((enabled) => !enabled)
   }
 
-  const activeReaction = snapshot.gesture === 'idle' ? null : REACTION_BY_ID[snapshot.gesture]
   const isWorking = status === 'loading' || status === 'requesting'
+  const activeLabel = snapshot.gesture === 'idle' ? 'none' : REACTION_BY_ID[snapshot.gesture].label
 
   return (
-    <main className={`app app--${status}`}>
-      <div className="circuit-field" aria-hidden="true" />
-
-      <header className="topbar">
-        <a className="wordmark" href="#top" aria-label="Face Mesh home">
-          <span className="wordmark__mark">FM</span>
-          <span>FACE MESH <b>/ LIVE</b></span>
-        </a>
-        <div className="topbar__status">
-          <span className={`status-dot status-dot--${status}`} />
-          {statusMessage}
-        </div>
-        <div className="topbar__controls">
-          <button className="control-button" type="button" onClick={() => setShowMesh((shown) => !shown)} aria-pressed={showMesh}>
-            Mesh {showMesh ? 'on' : 'off'}
-          </button>
-          <button className="control-button" type="button" onClick={toggleAudio} aria-pressed={audioEnabled}>
-            Sound {audioEnabled ? 'on' : 'off'}
-          </button>
-        </div>
+    <main className="ide-app">
+      <header className="os-titlebar">
+        <span>Kitty Mesh 0.2</span>
+        <span>[ browser process ]</span>
       </header>
 
-      <div className="workbench" id="top">
-        <RuntimePanel snapshot={snapshot} events={events} />
+      <nav className="menu-bar" aria-label="Application menu">
+        <span>File</span><span>View</span><span>Camera</span><span>Help</span>
+        <div className="menu-bar__actions">
+          <button type="button" onClick={() => setShowMesh((value) => !value)} aria-pressed={showMesh}>Mesh: {showMesh ? 'on' : 'off'}</button>
+          <button type="button" onClick={toggleAudio} aria-pressed={audioEnabled}>Sound: {audioEnabled ? 'on' : 'off'}</button>
+        </div>
+      </nav>
 
-        <section className="camera-column" aria-labelledby="camera-title">
-          <header className="camera-heading">
-            <div>
-              <span className="section-label">ON-DEVICE VISION</span>
-              <h1 id="camera-title">Make a signal.<br />Watch the code react.</h1>
-            </div>
-            <div className="privacy-chip">
-              <span>LOCAL ONLY</span>
-              No frames sent
-            </div>
-          </header>
-
-          <div className="camera-shell">
-            <div className="camera-shell__screw camera-shell__screw--tl" />
-            <div className="camera-shell__screw camera-shell__screw--tr" />
-            <div className="camera-shell__screw camera-shell__screw--bl" />
-            <div className="camera-shell__screw camera-shell__screw--br" />
-            <div className="camera-viewport">
-              <video
-                ref={videoRef}
-                className="camera-video"
-                playsInline
-                muted
-                onLoadedMetadata={(event) => setVideoSize({
-                  width: event.currentTarget.videoWidth,
-                  height: event.currentTarget.videoHeight,
-                })}
-              />
-              {showMesh && <LandmarkLayer landmarks={landmarks} {...videoSize} />}
-              <ReactionOverlay gesture={snapshot.gesture} />
-
-              {status !== 'running' && (
-                <div className="camera-gate">
-                  <div className="camera-gate__aperture" aria-hidden="true"><i /></div>
-                  <h2>{status === 'error' ? 'Camera unavailable' : 'Open the sensor'}</h2>
-                  <p>{statusMessage}</p>
-                  <button className="primary-button" type="button" onClick={startCamera} disabled={isWorking}>
-                    {isWorking ? 'Starting vision…' : status === 'error' ? 'Retry camera' : 'Start camera'}
-                  </button>
-                  <small>Browser permission required. Processing stays on this device.</small>
-                </div>
-              )}
-
-              {status === 'running' && (
-                <div className="camera-hud">
-                  <div className="camera-hud__mode">
-                    <span>ACTIVE STATE</span>
-                    <strong>{activeReaction?.label ?? 'Scanning'}</strong>
-                  </div>
-                  <div className="camera-hud__tracking">
-                    <span className={snapshot.faceTracked ? 'is-on' : ''}>FACE</span>
-                    <span className={snapshot.poseTracked ? 'is-on' : ''}>POSE</span>
-                    <output>{Math.round(snapshot.confidence * 100)}%</output>
-                  </div>
-                </div>
-              )}
-            </div>
-
-            <footer className="camera-footer">
-              <div><span>INPUT</span><strong>{videoSize.width ? `${videoSize.width}×${videoSize.height}` : 'awaiting feed'}</strong></div>
-              <div><span>MODE</span><strong>face + pose</strong></div>
-              {status === 'running' && <button type="button" onClick={stopCamera}>Stop camera</button>}
-            </footer>
-          </div>
-        </section>
-
-        <GestureRail
-          active={snapshot.gesture}
-          candidate={snapshot.candidate}
-          scores={snapshot.scores}
-          spinStage={snapshot.spinStage}
-          spinProgress={snapshot.spinProgress}
-        />
+      <div className="tab-bar" role="tablist" aria-label="Views">
+        <button type="button" id="camera-tab" role="tab" aria-selected={view === 'camera'} aria-controls="camera-panel" onClick={() => setView('camera')}>camera.ts</button>
+        <button type="button" id="output-tab" role="tab" aria-selected={view === 'output'} aria-controls="output-panel" onClick={() => setView('output')}>match-output.txt{lastMatch ? ' *' : ''}</button>
       </div>
 
-      <footer className="page-footer">
-        <p><strong>Your image never leaves the browser.</strong> MediaPipe runs locally after model download.</p>
-        <p>Tongue detection is an approximation. The 360 state follows a staged turn sequence with your shoulders in frame.</p>
+      <div className="ide-workspace">
+        <aside className="explorer" aria-label="Project files">
+          <header>EXPLORER</header>
+          <div>FACE-MESH</div>
+          <button type="button" className={view === 'camera' ? 'is-active' : ''} onClick={() => setView('camera')}>├─ camera.ts</button>
+          <button type="button" className={view === 'output' ? 'is-active' : ''} onClick={() => setView('output')}>├─ match-output.txt</button>
+          <span>├─ gesture-engine.ts</span>
+          <span>└─ vision.ts</span>
+          <footer>camera frames stay local</footer>
+        </aside>
+
+        <div className="editor-area">
+          <div id="camera-panel" role="tabpanel" aria-labelledby="camera-tab" className={view === 'camera' ? 'view-pane' : 'view-pane view-pane--hidden'} aria-hidden={view !== 'camera'}>
+            <section className="camera-pane" aria-labelledby="camera-pane-title">
+              <header className="pane-titlebar">
+                <span id="camera-pane-title">camera.ts</span>
+                <span>{videoSize.width ? `${videoSize.width}x${videoSize.height}` : 'no input'}</span>
+              </header>
+              <div className="camera-viewport">
+                <video
+                  ref={videoRef}
+                  className="camera-video"
+                  playsInline
+                  muted
+                  onLoadedMetadata={(event) => setVideoSize({ width: event.currentTarget.videoWidth, height: event.currentTarget.videoHeight })}
+                />
+                {showMesh && <LandmarkLayer landmarks={landmarks} {...videoSize} />}
+                {status !== 'running' && (
+                  <div className="camera-dialog">
+                    <pre aria-hidden="true">{`CAMERA DEVICE\n-------------\nstatus: ${status}`}</pre>
+                    <p>{statusMessage}</p>
+                    <button type="button" onClick={startCamera} disabled={isWorking}>
+                      {isWorking ? 'Starting...' : status === 'error' ? 'Retry camera' : 'Start camera'}
+                    </button>
+                  </div>
+                )}
+                {status === 'running' && (
+                  <div className="camera-readout">
+                    <span>match: {activeLabel}</span>
+                    <span>face: {snapshot.faceTracked ? 'yes' : 'no'}</span>
+                    <span>pose: {snapshot.poseTracked ? 'yes' : 'no'}</span>
+                    <span>confidence: {Math.round(snapshot.confidence * 100)}%</span>
+                  </div>
+                )}
+              </div>
+              <div className="camera-toolbar">
+                <span>{statusMessage}</span>
+                {status === 'running' && <button type="button" onClick={stopCamera}>Stop camera</button>}
+                <button type="button" onClick={() => setView('output')}>Open match output</button>
+              </div>
+            </section>
+
+            <RuntimePanel snapshot={snapshot} events={events} />
+            <GestureRail active={snapshot.gesture} candidate={snapshot.candidate} scores={snapshot.scores} spinStage={snapshot.spinStage} spinProgress={snapshot.spinProgress} />
+          </div>
+
+          <div id="output-panel" role="tabpanel" aria-labelledby="output-tab" className={view === 'output' ? 'view-pane' : 'view-pane view-pane--hidden'} aria-hidden={view !== 'output'}>
+            <MatchOutput active={snapshot.gesture} lastMatch={lastMatch} confidence={snapshot.confidence} onSelectCamera={() => setView('camera')} />
+          </div>
+        </div>
+      </div>
+
+      <footer className="status-bar">
+        <span>{status.toUpperCase()}</span>
+        <span>match: {activeLabel}</span>
+        <span>fps: {snapshot.fps.toFixed(0)}</span>
+        <span>latency: {snapshot.latencyMs.toFixed(0)}ms</span>
+        <span>MediaPipe / local</span>
       </footer>
     </main>
   )

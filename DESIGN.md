@@ -1,39 +1,37 @@
 ---
-name: Face Mesh Runtime
+name: Face Mesh IDE
 register: product
-status: v1
+status: v2
 colors:
-  base: "oklch(12% 0.018 170)"
-  surface: "oklch(17% 0.022 170)"
-  ink: "oklch(94% 0.016 165)"
-  signal: "oklch(82% 0.19 150)"
-  pose: "oklch(79% 0.14 218)"
-  face: "oklch(76% 0.17 310)"
-  warning: "oklch(82% 0.16 80)"
+  base: "#101010"
+  panel: "#181818"
+  text: "#d7d7d7"
+  muted: "#929292"
+  accent: "#66d982"
 typography:
-  interface: "Arial, Helvetica, sans-serif"
-  code: "Cascadia Code, SFMono-Regular, Consolas, monospace"
+  interface: "Lucida Console, Courier New, monospace"
+  code: "Lucida Console, Courier New, monospace"
 ---
 
 # Overview
-A dark, instrument-like interface inspired by exposed electronics and transparent hardware. The webcam is the main stage. A truthful runtime trace surrounds it and jumps between relevant code paths as detection progresses.
+A flat desktop workbench based on late-1990s code editors. The application uses a title bar, menu bar, file tabs, explorer, editor panes, and status bar. Camera and output are separate views in the same workspace.
 
 # Colors
-Near-black green-tinted surfaces create the enclosure. Mineral green marks active execution, warm amber marks pending signals, violet identifies face landmarks, and cool cyan identifies pose landmarks. Labels and shapes reinforce every semantic color.
+Use solid charcoal surfaces, gray rules, off-white text, and one restrained green accent. Amber is reserved for the 360 progress state. Do not use gradients, transparency effects, glows, or decorative color.
 
 # Typography
-Use a neutral system sans-serif for controls and explanations. Use monospace only where source code, measurements, or trace events make it semantically correct. Keep the hierarchy compact and operational.
+Use one compact monospace stack throughout because the entire product is presented as an IDE. Use fixed rem sizes, normal capitalization, and short labels. Avoid display typography and marketing headlines.
 
 # Elevation
-Create depth through surface lightness, fine borders, and selective opacity. Avoid broad shadows and decorative glow. The runtime layer appears behind the camera plane, as if visible through a transparent enclosure.
+There is no elevation system. Separate panes with one-pixel borders and small surface-lightness changes. Corners remain square. Do not use shadows.
 
 # Components
-The system contains a primary camera stage, mapped runtime trace, confidence meter, gesture rail, privacy notice, camera permission state, and reaction overlay. Controls use familiar buttons and switches with visible focus and disabled states.
+The UI consists of a title bar, menu bar, file tabs, explorer, camera editor, source trace, signal watch table, Match Output editor, reference illustrations, and status bar. Controls follow one square desktop-button pattern.
 
 # Do's and Don'ts
-- Do connect every animation to a real detector or state transition.
-- Do keep the camera feed visually dominant.
-- Do explain that the code trace is a mapped runtime visualization.
-- Do not fabricate random logs.
-- Do not use generic glass cards.
-- Do not hide core controls on small screens.
+- Do use real file names, values, events, and source lines.
+- Do keep panes dense and aligned.
+- Do provide Camera and Match Output as clear tabs.
+- Do not use gradients, glows, glass, decorative grids, or oversized text.
+- Do not add marketing slogans or playful detector captions.
+- Do not hide camera controls on small screens.

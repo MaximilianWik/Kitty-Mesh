@@ -2,6 +2,20 @@
 
 All notable changes to this project are documented here.
 
+## 0.2.0 · 2026-09-10
+
+### Changed
+
+- Replaced the original visual treatment with a flat late-1990s IDE workbench.
+- Removed gradients, glows, decorative circuitry, reaction slogans, and marketing copy.
+- Consolidated camera controls, runtime source, signal scores, and status data into standard panes.
+
+### Added
+
+- Match Output tab with a large live match view.
+- Six inline reference illustrations for blank, profile, tongue, 360, angry, and hands-up states.
+- Persistent last-match output while the detector returns to idle.
+
 ## 0.1.0 · 2026-09-10
 
 ### Added
@@ -14,5 +28,5 @@ All notable changes to this project are documented here.
 - Original CSS reaction visuals and opt-in synthesized Web Audio cues.
 - Camera permission, loading, error, retry, and stop states.
 - Truthful mapped runtime visualization connected to real pipeline events.
-- Responsive exposed-instrument interface with reduced-motion support.
+- Responsive 1990s IDE workbench with reduced-motion support.
 - Privacy, local setup, limitations, customization, and Vercel deployment documentation.

@@ -4,9 +4,6 @@ export interface ReactionDefinition {
   id: Exclude<GestureId, 'idle'>
   label: string
   prompt: string
-  symbol: string
-  caption: string
-  className: string
   tone: [number, number]
 }
 
@@ -14,55 +11,37 @@ export const REACTIONS: ReactionDefinition[] = [
   {
     id: 'blank',
     label: 'Blank stare',
-    prompt: 'Relax your face and look forward',
-    symbol: '·_·',
-    caption: 'NEUTRAL SIGNAL',
-    className: 'reaction--blank',
+    prompt: 'Face forward and relax your expression.',
     tone: [196, 246],
   },
   {
     id: 'profile',
     label: 'Side profile',
-    prompt: 'Turn your head clearly to either side',
-    symbol: '◖',
-    caption: 'EDGE DETECTED',
-    className: 'reaction--profile',
+    prompt: 'Turn your head clearly to either side.',
     tone: [220, 330],
   },
   {
     id: 'tongue',
     label: 'Tongue out',
-    prompt: 'Open wide and stick your tongue out',
-    symbol: ':P',
-    caption: 'BLEP CONFIRMED',
-    className: 'reaction--tongue',
+    prompt: 'Open your mouth and stick out your tongue.',
     tone: [294, 392],
   },
   {
     id: 'spin',
     label: 'Full 360',
-    prompt: 'Show both shoulders, then turn through each side',
-    symbol: '↻',
-    caption: 'ORBIT COMPLETE',
-    className: 'reaction--spin',
+    prompt: 'Keep your shoulders visible and turn through both sides.',
     tone: [164, 440],
   },
   {
     id: 'angry',
     label: 'Angry face',
-    prompt: 'Lower your brows and scrunch your nose',
-    symbol: '>:(',
-    caption: 'PRESSURE RISING',
-    className: 'reaction--angry',
+    prompt: 'Lower your brows and scrunch your nose.',
     tone: [110, 82],
   },
   {
     id: 'hands',
     label: 'Hands up',
-    prompt: 'Step back and lift both wrists above your shoulders',
-    symbol: '\\o/',
-    caption: 'SIGNAL RECEIVED',
-    className: 'reaction--hands',
+    prompt: 'Step back and raise both wrists above your shoulders.',
     tone: [246, 493],
   },
 ]
