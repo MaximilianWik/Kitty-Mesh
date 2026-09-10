@@ -32,7 +32,7 @@ export function LandmarkLayer({ landmarks, hands, width, height, mirrored = true
     const x = (value: number) => (mirrored ? 1 - value : value) * width
     const y = (value: number) => value * height
 
-    context.strokeStyle = 'rgba(208, 122, 255, 0.32)'
+    context.strokeStyle = 'rgba(94, 221, 112, 0.34)'
     context.lineWidth = 0.7
     context.beginPath()
     for (const connection of FaceLandmarker.FACE_LANDMARKS_TESSELATION) {

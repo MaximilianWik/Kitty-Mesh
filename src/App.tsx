@@ -3,6 +3,7 @@ import { DesktopWindow } from './components/DesktopWindow'
 import { GestureRail } from './components/GestureRail'
 import { HelpPane, SourceViewer } from './components/SourceViewer'
 import { LandmarkLayer } from './components/LandmarkLayer'
+import { ReactionPane } from './components/ReactionPane'
 import { RuntimePanel } from './components/RuntimePanel'
 import { playReactionTone, unlockAudio } from './lib/audio'
 import { loadReactionMedia, mediaUrl, type ReactionMediaMap } from './lib/reaction-media'
@@ -14,6 +15,7 @@ import appSource from './App.tsx?raw'
 import desktopWindowSource from './components/DesktopWindow.tsx?raw'
 import gestureRailSource from './components/GestureRail.tsx?raw'
 import landmarkLayerSource from './components/LandmarkLayer.tsx?raw'
+import reactionPaneSource from './components/ReactionPane.tsx?raw'
 import runtimePanelSource from './components/RuntimePanel.tsx?raw'
 import sourceViewerSource from './components/SourceViewer.tsx?raw'
 import audioSource from './lib/audio.ts?raw'
@@ -28,8 +30,15 @@ import gestureEngineTestSource from './test/gesture-engine.test.ts?raw'
 import viteEnvSource from './vite-env.d.ts?raw'
 import stylesSource from './styles.css?raw'
 
-type WindowId = 'camera' | 'source' | 'help'
+type WindowId = 'camera' | 'reaction' | 'help'
 type MenuId = 'file' | 'view' | 'camera' | 'help' | null
+
+interface SourceTab {
+  id: string
+  fileName: (typeof SOURCE_FILES)[number][0]
+  floating: boolean
+  zIndex: number
+}
 
 const EMPTY_LANDMARKS: FrameLandmarks = { face: [], pose: [], hands: [] }
 const SOURCE_FILES = [
@@ -37,6 +46,7 @@ const SOURCE_FILES = [
   ['components/DesktopWindow.tsx', desktopWindowSource],
   ['components/GestureRail.tsx', gestureRailSource],
   ['components/LandmarkLayer.tsx', landmarkLayerSource],
+  ['components/ReactionPane.tsx', reactionPaneSource],
   ['components/RuntimePanel.tsx', runtimePanelSource],
   ['components/SourceViewer.tsx', sourceViewerSource],
   ['lib/audio.ts', audioSource],
@@ -59,11 +69,12 @@ function App() {
   const startingRef = useRef(false)
   const previousGesture = useRef<GestureId>('idle')
   const menuRef = useRef<HTMLDivElement>(null)
-  const [activeWindow, setActiveWindow] = useState<WindowId>('camera')
-  const [floating, setFloating] = useState<Record<WindowId, boolean>>({ camera: false, source: false, help: false })
-  const [zOrder, setZOrder] = useState<Record<WindowId, number>>({ camera: 20, source: 21, help: 22 })
+  const sourceCounter = useRef(0)
+  const [activeWindow, setActiveWindow] = useState<string>('camera')
+  const [floating, setFloating] = useState<Record<WindowId, boolean>>({ camera: false, reaction: false, help: false })
+  const [zOrder, setZOrder] = useState<Record<WindowId, number>>({ camera: 20, reaction: 21, help: 22 })
+  const [sourceTabs, setSourceTabs] = useState<SourceTab[]>([])
   const [menu, setMenu] = useState<MenuId>(null)
-  const [selectedFile, setSelectedFile] = useState<(typeof SOURCE_FILES)[number][0]>('App.tsx')
   const [status, setStatus] = useState<TrackingStatus>('idle')
   const [statusMessage, setStatusMessage] = useState('Camera stopped, nya.')
   const [snapshot, setSnapshot] = useState<VisionSnapshot>(INITIAL_SNAPSHOT)
@@ -76,10 +87,7 @@ function App() {
   const [devices, setDevices] = useState<MediaDeviceInfo[]>([])
   const [selectedDeviceId, setSelectedDeviceId] = useState('')
 
-  const selectedSource = useMemo(
-    () => SOURCE_FILES.find(([name]) => name === selectedFile) ?? SOURCE_FILES[0],
-    [selectedFile],
-  )
+  const sourceByName = useMemo(() => new Map(SOURCE_FILES), [])
 
   const handleSnapshot = useCallback((next: VisionSnapshot, points: FrameLandmarks) => {
     setSnapshot(next)
@@ -92,8 +100,7 @@ function App() {
 
   const refreshDevices = useCallback(async () => {
     if (!navigator.mediaDevices?.enumerateDevices) return
-    const inputs = (await navigator.mediaDevices.enumerateDevices()).filter((device) => device.kind === 'videoinput')
-    setDevices(inputs)
+    setDevices((await navigator.mediaDevices.enumerateDevices()).filter((device) => device.kind === 'videoinput'))
   }, [])
 
   useEffect(() => {
@@ -143,7 +150,6 @@ function App() {
       setStatusMessage('Camera API unavailable.')
       return
     }
-
     startingRef.current = true
     setStatus('loading')
     setStatusMessage('Loading tracking models, /ᐠ - ˕ -マ')
@@ -158,12 +164,9 @@ function App() {
       streamRef.current = stream
       const video = videoRef.current!
       video.srcObject = stream
-      if (video.readyState < HTMLMediaElement.HAVE_METADATA) {
-        await new Promise<void>((resolve) => video.addEventListener('loadedmetadata', () => resolve(), { once: true }))
-      }
+      if (video.readyState < HTMLMediaElement.HAVE_METADATA) await new Promise<void>((resolve) => video.addEventListener('loadedmetadata', () => resolve(), { once: true }))
       await video.play()
-      const activeId = stream.getVideoTracks()[0]?.getSettings().deviceId ?? deviceId
-      setSelectedDeviceId(activeId)
+      setSelectedDeviceId(stream.getVideoTracks()[0]?.getSettings().deviceId ?? deviceId)
       setVideoSize({ width: video.videoWidth, height: video.videoHeight })
       runtimeRef.current!.start(video)
       setStatus('running')
@@ -221,15 +224,38 @@ function App() {
   }
 
   const openSource = (fileName: (typeof SOURCE_FILES)[number][0]) => {
-    setSelectedFile(fileName)
-    selectWindow('source')
+    const existing = sourceTabs.find((tab) => tab.fileName === fileName)
+    if (existing) {
+      setActiveWindow(existing.id)
+      setSourceTabs((tabs) => tabs.map((tab) => tab.id === existing.id ? { ...tab, zIndex: Math.max(...tabs.map((item) => item.zIndex)) + 1 } : tab))
+    } else {
+      const id = `source-${++sourceCounter.current}`
+      setSourceTabs((tabs) => [...tabs, { id, fileName, floating: false, zIndex: 30 + sourceCounter.current }])
+      setActiveWindow(id)
+    }
     setMenu(null)
   }
 
-  const resetWindows = () => {
-    setFloating({ camera: false, source: false, help: false })
+  const toggleSourceFloating = (id: string) => {
+    setSourceTabs((tabs) => tabs.map((tab) => tab.id === id ? { ...tab, floating: !tab.floating, zIndex: Math.max(...tabs.map((item) => item.zIndex)) + 1 } : tab))
+    setActiveWindow(id)
+  }
+
+  const raiseSource = (id: string) => {
+    setActiveWindow(id)
+    setSourceTabs((tabs) => tabs.map((tab) => tab.id === id ? { ...tab, zIndex: Math.max(...tabs.map((item) => item.zIndex)) + 1 } : tab))
+  }
+
+  const closeSource = (id: string) => {
+    setSourceTabs((tabs) => tabs.filter((tab) => tab.id !== id))
     setActiveWindow('camera')
-    setZOrder({ camera: 20, source: 21, help: 22 })
+  }
+
+  const resetWindows = () => {
+    setFloating({ camera: false, reaction: false, help: false })
+    setSourceTabs((tabs) => tabs.map((tab, index) => ({ ...tab, floating: false, zIndex: 30 + index })))
+    setActiveWindow('camera')
+    setZOrder({ camera: 20, reaction: 21, help: 22 })
     setMenu(null)
   }
 
@@ -257,7 +283,7 @@ function App() {
     <main className="ide-app">
       <header className="os-titlebar"><span>Kitty Mesh 0.4</span><span>[ browser process ]</span></header>
       <nav className="menu-bar" ref={menuRef} aria-label="Application menu">
-        <div className="menu-group"><button type="button" aria-expanded={menu === 'file'} onClick={() => setMenu(menu === 'file' ? null : 'file')}>File</button>{menu === 'file' && <div className="menu-popup"><button type="button" onClick={() => selectWindow('camera')}>Open camera</button><button type="button" onClick={() => { setActiveWindow('camera'); setFloating((state) => ({ ...state, source: false, help: false })); setMenu(null) }}>Close source windows</button></div>}</div>
+        <div className="menu-group"><button type="button" aria-expanded={menu === 'file'} onClick={() => setMenu(menu === 'file' ? null : 'file')}>File</button>{menu === 'file' && <div className="menu-popup"><button type="button" onClick={() => selectWindow('camera')}>Open camera</button><button type="button" onClick={() => { setSourceTabs([]); setActiveWindow('camera'); setMenu(null) }}>Close source windows</button></div>}</div>
         <div className="menu-group"><button type="button" aria-expanded={menu === 'view'} onClick={() => setMenu(menu === 'view' ? null : 'view')}>View</button>{menu === 'view' && <div className="menu-popup"><button type="button" onClick={() => { setShowMesh((value) => !value); setMenu(null) }}>Mesh: {showMesh ? 'on' : 'off'}</button><button type="button" onClick={() => { void toggleAudio(); setMenu(null) }}>Sound: {audioEnabled ? 'on' : 'off'}</button><button type="button" onClick={resetWindows}>Reset windows</button></div>}</div>
         <div className="menu-group"><button type="button" aria-expanded={menu === 'camera'} onClick={() => { void refreshDevices(); setMenu(menu === 'camera' ? null : 'camera') }}>Camera</button>{menu === 'camera' && <div className="menu-popup menu-popup--wide"><button type="button" onClick={() => { if (status === 'running') stopCamera(); else void startCamera(); setMenu(null) }}>{status === 'running' ? 'Stop camera' : 'Start camera'}</button><button type="button" onClick={() => { if (status === 'running') { stopCamera(); window.setTimeout(() => void startCamera(selectedDeviceId, true), 80) } else { void startCamera() } setMenu(null) }}>Restart camera</button><span>Inputs</span>{devices.map((device, index) => <button type="button" className={device.deviceId === selectedDeviceId ? 'is-current' : ''} key={device.deviceId} onClick={() => void changeCamera(device.deviceId)}>{device.label || `Camera ${index + 1}`}</button>)}</div>}</div>
         <div className="menu-group"><button type="button" aria-expanded={menu === 'help'} onClick={() => setMenu(menu === 'help' ? null : 'help')}>Help</button>{menu === 'help' && <div className="menu-popup"><button type="button" onClick={() => { selectWindow('help'); setMenu(null) }}>About Kitty Mesh</button></div>}</div>
@@ -265,21 +291,18 @@ function App() {
 
       <div className="tab-bar" role="tablist" aria-label="Open windows">
         <button type="button" role="tab" aria-selected={activeWindow === 'camera'} onClick={() => selectWindow('camera')}>camera.ts{floating.camera ? ' [float]' : ''}</button>
-        {activeWindow === 'source' && <button type="button" role="tab" aria-selected onClick={() => selectWindow('source')}>{selectedFile}{floating.source ? ' [float]' : ''}</button>}
+        <button type="button" role="tab" aria-selected={activeWindow === 'reaction'} onClick={() => selectWindow('reaction')}>reaction.ts{floating.reaction ? ' [float]' : ''}</button>
+        {sourceTabs.map((tab) => <button type="button" role="tab" aria-selected={activeWindow === tab.id} key={tab.id} onClick={() => raiseSource(tab.id)}>{tab.fileName}{tab.floating ? ' [float]' : ''}</button>)}
         {activeWindow === 'help' && <button type="button" role="tab" aria-selected onClick={() => selectWindow('help')}>about-kitty-mesh.txt</button>}
       </div>
 
       <div className="ide-workspace">
-        <aside className="explorer" aria-label="Project files">
-          <header>EXPLORER</header>
-          <div>KITTY-MESH</div>
-          {SOURCE_FILES.map(([fileName]) => <button type="button" className={activeWindow === 'source' && selectedFile === fileName ? 'is-active' : ''} key={fileName} onClick={() => openSource(fileName)}>├─ {fileName}</button>)}
-          <footer>frames stay local, =^..^=</footer>
-        </aside>
+        <aside className="explorer" aria-label="Project files"><header>EXPLORER</header><div>KITTY-MESH</div>{SOURCE_FILES.map(([fileName]) => <button type="button" className={sourceTabs.some((tab) => tab.fileName === fileName) ? 'is-active' : ''} key={fileName} onClick={() => openSource(fileName)}>├─ {fileName}</button>)}<footer>frames stay local, =^..^=</footer></aside>
         <div className="desktop">
           <p className="desktop__hint">Use ↗ to float, drag title bars to move, and resize from the lower-right corner.</p>
           <DesktopWindow id="camera-window" title="camera.ts" floating={floating.camera} visible={floating.camera || activeWindow === 'camera'} zIndex={zOrder.camera} initialPosition={{ x: 205, y: 110, width: 780, height: 650 }} onActivate={() => raiseWindow('camera')} onToggleFloating={() => toggleFloating('camera')}>{cameraContent}</DesktopWindow>
-          <DesktopWindow id="source-window" title={selectedFile} floating={floating.source} visible={floating.source || activeWindow === 'source'} zIndex={zOrder.source} initialPosition={{ x: 470, y: 155, width: 760, height: 620 }} onActivate={() => raiseWindow('source')} onToggleFloating={() => toggleFloating('source')}><SourceViewer fileName={selectedSource[0]} source={selectedSource[1]} onClose={() => selectWindow('camera')} /></DesktopWindow>
+          <DesktopWindow id="reaction-window" title="reaction.ts" floating={floating.reaction} visible={floating.reaction || activeWindow === 'reaction'} zIndex={zOrder.reaction} initialPosition={{ x: 470, y: 155, width: 560, height: 460 }} onActivate={() => raiseWindow('reaction')} onToggleFloating={() => toggleFloating('reaction')}><ReactionPane gesture={snapshot.gesture} confidence={snapshot.confidence} media={reactionMedia} onClose={() => selectWindow('camera')} /></DesktopWindow>
+          {sourceTabs.map((tab, index) => <DesktopWindow id={tab.id} title={tab.fileName} floating={tab.floating} visible={tab.floating || activeWindow === tab.id} zIndex={tab.zIndex} initialPosition={{ x: 420 + index * 24, y: 150 + index * 24, width: 760, height: 620 }} onActivate={() => raiseSource(tab.id)} onToggleFloating={() => toggleSourceFloating(tab.id)} key={tab.id}><SourceViewer fileName={tab.fileName} source={sourceByName.get(tab.fileName) ?? ''} onClose={() => closeSource(tab.id)} /></DesktopWindow>)}
           <DesktopWindow id="help-window" title="about-kitty-mesh.txt" floating={floating.help} visible={floating.help || activeWindow === 'help'} zIndex={zOrder.help} initialPosition={{ x: 520, y: 210, width: 500, height: 360 }} onActivate={() => raiseWindow('help')} onToggleFloating={() => toggleFloating('help')}><HelpPane onClose={() => selectWindow('camera')} /></DesktopWindow>
         </div>
       </div>

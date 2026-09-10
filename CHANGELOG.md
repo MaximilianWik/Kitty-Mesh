@@ -1,5 +1,21 @@
 # Changelog
 
+## 0.5.0 · 2026-09-10
+
+### Added
+
+- Multiple source tabs can remain open at once.
+- Camera, reaction, and source windows can float together and stack independently.
+- Reaction pane now shows future image and sound paths for the live gesture.
+- Live source trace now shows more untruncated code.
+
+### Changed
+
+- Added an explicit drag resize handle for docked and floating windows.
+- Made hand labels larger and camera readout text smaller.
+- Tightened score bars to compact segmented blocks.
+- Switched the workbench from crimson to sparse black and green terminal colors.
+
 ## 0.4.0 · 2026-09-10
 
 ### Added
