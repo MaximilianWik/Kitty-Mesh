@@ -1,0 +1,20 @@
+node_modules/
+dist/
+.vite/
+*.local
+*.tsbuildinfo
+vite.config.js
+vite.config.d.ts
+.DS_Store
+Thumbs.db
+.vercel/
+
+# immaculate-ignore-start
+.immaculate/config.local.json
+.immaculate/*.png
+.immaculate/live/server.json
+.immaculate/live/sessions/
+.immaculate/live/previews/
+.immaculate/live/cache/
+.immaculate/live/*.png
+# immaculate-ignore-end

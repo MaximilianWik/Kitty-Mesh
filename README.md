@@ -1,0 +1,130 @@
+# Face Mesh
+
+An on-device webcam experiment that recognizes expressions and body poses, triggers original visual and audio reactions, and exposes its real runtime path through a mapped source-code visualization.
+
+## Recognized states
+
+| State | Detection approach | Framing |
+| --- | --- | --- |
+| Blank stare | Low facial blendshape activity | Face centered and well lit |
+| Side profile | Nose offset relative to the eyes | Turn clearly left or right |
+| Tongue out | Approximation from jaw and mouth blendshapes | Face close to camera, mouth open wide |
+| Full 360 | Staged orientation sequence | Upper body and both shoulders visible |
+| Angry face | Brow-down, nose-sneer, squint, and mouth-press blendshapes | Face centered |
+| Hands up | Both wrists above their corresponding shoulders | Step back until wrists and shoulders fit |
+
+### Important limitations
+
+A normal webcam image does not contain depth behind the person. The 360 detector therefore recognizes this sequence:
+
+`front → first side → face hidden while pose remains → opposite side → front`
+
+This is a practical gesture sequence, not continuous 3D body reconstruction. Tongue landmarks are not exposed by MediaPipe Face Landmarker, so tongue-out is intentionally labeled and implemented as an approximation using mouth-open geometry and blendshapes. Thresholds may need tuning for different cameras, faces, lighting, and mobility.
+
+## Runtime visualization
+
+The source panel is a mapped runtime visualization. It receives events from the actual camera, Face Landmarker, Pose Landmarker, signal extraction, classifier, stabilizer, and reaction paths. Active lines correspond to those real events. It is not a JavaScript interpreter, browser debugger, or fabricated terminal stream.
+
+## Privacy
+
+- Camera frames are processed locally in the browser.
+- The app has no backend and sends no frames to this repository or Vercel.
+- On first use, the browser downloads MediaPipe WebAssembly and model files from pinned public CDN/model URLs.
+- Camera access can be stopped from the interface or the browser permission controls.
+- Audio is synthesized locally through the Web Audio API and is muted by default.
+
+## Run locally on Windows
+
+Requirements: Node.js 20.19+ or 22.12+ and a current Chromium, Firefox, or Safari browser.
+
+Open PowerShell:
+
+```powershell
+cd "C:\Users\AD17661\GitHub\Face Mesh"
+npm install
+npm run dev
+```
+
+Open the local URL shown by Vite, usually `http://localhost:5173`. Camera APIs work on localhost and secure HTTPS origins.
+
+Run verification:
+
+```powershell
+npm test
+npm run build
+```
+
+Preview the production build:
+
+```powershell
+npm run preview
+```
+
+## Deploy to Vercel
+
+### Vercel dashboard
+
+1. Push the repository to GitHub.
+2. In Vercel, select **Add New → Project**.
+3. Import `MaximilianWik/Face-Mesh`.
+4. Vercel detects Vite. Keep the included build and output settings.
+5. Deploy, then grant camera access on the HTTPS deployment.
+
+### Vercel CLI
+
+```powershell
+npm install --global vercel
+cd "C:\Users\AD17661\GitHub\Face Mesh"
+vercel
+```
+
+For the production deployment:
+
+```powershell
+vercel --prod
+```
+
+## Architecture
+
+```text
+src/
+├── components/
+│   ├── GestureRail.tsx       confidence and 360 progress
+│   ├── LandmarkLayer.tsx     responsive face and pose canvas
+│   ├── ReactionOverlay.tsx   built-in visual reactions
+│   └── RuntimePanel.tsx      truthful mapped execution view
+├── lib/
+│   ├── audio.ts              synthesized Web Audio cues
+│   ├── gesture-engine.ts     signal extraction and state machines
+│   ├── reactions.ts          state-to-reaction mapping
+│   ├── runtime-source.ts     source excerpts mapped to events
+│   ├── types.ts              shared state types
+│   └── vision.ts             MediaPipe loading and frame loop
+└── App.tsx                   camera lifecycle and UI composition
+```
+
+The app processes face frames at up to 20 Hz and pose frames at up to 12 Hz to reduce CPU/GPU load while preserving responsive gestures. Detection methods are synchronous in the MediaPipe Web API, so the frame loop is intentionally throttled.
+
+## Replace or extend reactions
+
+Built-in reactions use CSS, text symbols, and locally synthesized tones, so the project ships without copyrighted media.
+
+1. Add images, GIFs, or audio under `public/reactions/`.
+2. Extend `ReactionDefinition` in `src/lib/reactions.ts` with asset paths.
+3. Render those fields in `src/components/ReactionOverlay.tsx`.
+4. Keep audio opt-in and include descriptive alternative text for visual media.
+
+Gesture thresholds live in `src/lib/gesture-engine.ts`. Adjust one signal at a time and verify across multiple users and lighting conditions.
+
+## Model sources
+
+- [`@mediapipe/tasks-vision`](https://www.npmjs.com/package/@mediapipe/tasks-vision), pinned in `package.json`
+- [Face Landmarker model](https://storage.googleapis.com/mediapipe-models/face_landmarker/face_landmarker/float16/1/face_landmarker.task)
+- [Pose Landmarker Lite model](https://storage.googleapis.com/mediapipe-models/pose_landmarker/pose_landmarker_lite/float16/1/pose_landmarker_lite.task)
+
+## Browser support notes
+
+- Camera access requires HTTPS in production.
+- iOS browsers may pause camera processing when the tab is hidden.
+- Low-power devices may report reduced FPS. The UI remains usable because pose inference is throttled separately.
+- The app requests one user-facing camera and one person at a time.
