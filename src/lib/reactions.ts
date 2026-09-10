@@ -13,6 +13,7 @@ export const REACTIONS: ReactionDefinition[] = [
   { id: 'profile', label: 'Side profile', prompt: 'Turn your head clearly to either side.', mediaBaseName: 'profile', tone: [220, 330] },
   { id: 'tongue', label: 'Tongue out', prompt: 'Open your mouth and stick out your tongue.', mediaBaseName: 'tongue', tone: [294, 392] },
   { id: 'happy', label: 'Happy face', prompt: 'Smile with both sides of your mouth.', mediaBaseName: 'happy', tone: [330, 440] },
+  { id: 'kiss', label: 'Kiss face', prompt: 'Pucker your lips toward the camera.', mediaBaseName: 'kiss', tone: [392, 523] },
   { id: 'spin', label: 'Full 360', prompt: 'Keep your shoulders visible and turn through both sides.', mediaBaseName: 'spin', tone: [164, 440] },
   { id: 'angry', label: 'Angry face', prompt: 'Lower your brows and scrunch your nose.', mediaBaseName: 'angry', tone: [110, 82] },
   { id: 'hands', label: 'Hands up', prompt: 'Step back and raise both wrists above your shoulders.', mediaBaseName: 'hands', tone: [246, 493] },

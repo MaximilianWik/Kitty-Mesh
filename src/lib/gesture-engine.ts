@@ -153,6 +153,11 @@ export function extractSignals(
     scoreOf(blendshapes, 'cheekSquintRight'),
   )
   const happy = clamp(smile * 0.82 + cheekSquint * 0.18 - jawOpen * 0.08)
+  const kiss = clamp(
+    scoreOf(blendshapes, 'mouthPucker') * 0.64 +
+    scoreOf(blendshapes, 'mouthFunnel') * 0.28 +
+    scoreOf(blendshapes, 'mouthShrugLower') * 0.08 - jawOpen * 0.12,
+  )
 
   const browDown = average(
     scoreOf(blendshapes, 'browDownLeft'),
@@ -207,6 +212,7 @@ export function extractSignals(
       profile,
       tongue,
       happy,
+      kiss,
       angry,
       hands,
       ...handAnalysis.scores,
@@ -316,6 +322,7 @@ export class GestureEngine {
     profile: 0,
     tongue: 0,
     happy: 0,
+    kiss: 0,
     angry: 0,
     hands: 0,
     spin: 0,
@@ -343,10 +350,11 @@ export class GestureEngine {
       ['fist', this.smoothed.fist, 0.62],
       ['open-palm', this.smoothed['open-palm'], 0.62],
       ['tongue', this.smoothed.tongue, 0.25],
+      ['kiss', this.smoothed.kiss, 0.38],
       ['happy', this.smoothed.happy, 0.38],
       ['angry', this.smoothed.angry, 0.4],
       ['profile', this.smoothed.profile, 0.52],
-      ['blank', this.smoothed.blank, 0.62],
+      ['blank', this.smoothed.blank, 0.3],
     ]
     const winner = ranked.find(([, score, threshold]) => score >= threshold)
     const candidate = winner?.[0] ?? 'idle'

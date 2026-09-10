@@ -1,37 +1,37 @@
 ---
-name: Face Mesh IDE
+name: Kitty Mesh IDE
 register: product
-status: v2
+status: v4
 colors:
-  base: "#101010"
-  panel: "#181818"
-  text: "#d7d7d7"
-  muted: "#929292"
-  accent: "#66d982"
+  base: "#0a0809"
+  panel: "#141013"
+  text: "#e9dfca"
+  muted: "#a79691"
+  accent: "#c64b5a"
+  warning: "#c89c55"
 typography:
   interface: "Lucida Console, Courier New, monospace"
   code: "Lucida Console, Courier New, monospace"
 ---
 
 # Overview
-A flat desktop workbench based on late-1990s code editors. The application uses a title bar, menu bar, file tabs, explorer, editor panes, and status bar. Camera and output are separate views in the same workspace.
+Kitty Mesh is a flat, gothic browser workbench. It combines a live camera pane with an Explorer that opens real bundled source files. Windows can dock, float, move, stack, and resize without stopping the camera.
 
 # Colors
-Use solid charcoal surfaces, gray rules, off-white text, and one restrained green accent. Amber is reserved for the 360 progress state. Do not use gradients, transparency effects, glows, or decorative color.
+Use near-black plum surfaces, bone text, crimson for active state, and amber for warnings. Surfaces are solid. Do not use gradients, glows, glass, shadows, or decorative color.
 
 # Typography
-Use one compact monospace stack throughout because the entire product is presented as an IDE. Use fixed rem sizes, normal capitalization, and short labels. Avoid display typography and marketing headlines.
+Use one compact monospace stack. Labels stay short and source code remains readable. Product prose can be playful but must stay technically direct. =^..^=
 
 # Elevation
-There is no elevation system. Separate panes with one-pixel borders and small surface-lightness changes. Corners remain square. Do not use shadows.
+There is no elevation system. Use one-pixel borders and small solid surface changes. Corners stay square.
 
 # Components
-The UI consists of a title bar, menu bar, file tabs, explorer, draggable desktop windows, camera editor, source trace, signal watch table, Match Output window, reference illustrations, future media slots, and status bar. Controls follow one square desktop-button pattern.
+The interface has a title bar, functioning menus, Explorer, source viewer, draggable desktop windows, camera pane, source trace, signal watch table, and status bar. Camera and source windows are resizable both docked and floating.
 
 # Do's and Don'ts
-- Do use real file names, values, events, and source lines.
-- Do keep panes dense and aligned.
-- Do provide Camera and Match Output as clear tabs.
-- Do not use gradients, glows, glass, decorative grids, or oversized text.
-- Do not add marketing slogans or playful detector captions.
-- Do not hide camera controls on small screens.
+- Do show actual file contents and runtime values.
+- Do lock pane and table heights during live detection.
+- Do keep camera controls available from the Camera menu.
+- Do not use gradients, glows, glass, decorative grids, oversized headings, or fake logs.
+- Do not include unused output or reaction screens.

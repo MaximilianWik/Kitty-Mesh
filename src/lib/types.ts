@@ -3,6 +3,7 @@ export type FacePoseId =
   | 'profile'
   | 'tongue'
   | 'happy'
+  | 'kiss'
   | 'angry'
 
 export type BodyPoseId = 'spin' | 'hands'
@@ -39,6 +40,7 @@ export interface GestureScores {
   profile: number
   tongue: number
   happy: number
+  kiss: number
   angry: number
   hands: number
   spin: number
@@ -113,6 +115,7 @@ export const EMPTY_SCORES: GestureScores = {
   profile: 0,
   tongue: 0,
   happy: 0,
+  kiss: 0,
   angry: 0,
   hands: 0,
   spin: 0,
