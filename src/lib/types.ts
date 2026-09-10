@@ -13,6 +13,7 @@ export type HandGestureId =
   | 'fist'
   | 'point'
   | 'peace'
+  | 'c-hand'
   | 'thumbs-up'
 
 export type GestureId = 'idle' | FacePoseId | BodyPoseId | HandGestureId
@@ -48,6 +49,7 @@ export interface GestureScores {
   fist: number
   point: number
   peace: number
+  'c-hand': number
   'thumbs-up': number
 }
 
@@ -123,6 +125,7 @@ export const EMPTY_SCORES: GestureScores = {
   fist: 0,
   point: 0,
   peace: 0,
+  'c-hand': 0,
   'thumbs-up': 0,
 }
 

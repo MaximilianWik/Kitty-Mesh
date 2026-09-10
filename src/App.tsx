@@ -297,7 +297,30 @@ function App() {
       </div>
 
       <div className="ide-workspace">
-        <aside className="explorer" aria-label="Project files"><header>EXPLORER</header><div>KITTY-MESH</div>{SOURCE_FILES.map(([fileName]) => <button type="button" className={sourceTabs.some((tab) => tab.fileName === fileName) ? 'is-active' : ''} key={fileName} onClick={() => openSource(fileName)}>├─ {fileName}</button>)}<footer>frames stay local, =^..^=</footer></aside>
+        <aside className="explorer" aria-label="Project files">
+          <header>EXPLORER</header>
+          <div className="explorer__root">KITTY-MESH</div>
+          <div className="explorer__folder" aria-label="src folder">
+            <span>▾ src</span>
+            <button type="button" className={sourceTabs.some((tab) => tab.fileName === 'App.tsx') ? 'is-active' : ''} onClick={() => openSource('App.tsx')}>├─ App.tsx</button>
+            <button type="button" className={sourceTabs.some((tab) => tab.fileName === 'main.tsx') ? 'is-active' : ''} onClick={() => openSource('main.tsx')}>├─ main.tsx</button>
+            <button type="button" className={sourceTabs.some((tab) => tab.fileName === 'styles.css') ? 'is-active' : ''} onClick={() => openSource('styles.css')}>├─ styles.css</button>
+            <button type="button" className={sourceTabs.some((tab) => tab.fileName === 'vite-env.d.ts') ? 'is-active' : ''} onClick={() => openSource('vite-env.d.ts')}>├─ vite-env.d.ts</button>
+            <div className="explorer__folder">
+              <span>├─ ▾ components</span>
+              {SOURCE_FILES.filter(([name]) => name.startsWith('components/')).map(([fileName]) => <button type="button" className={sourceTabs.some((tab) => tab.fileName === fileName) ? 'is-active' : ''} key={fileName} onClick={() => openSource(fileName)}>│  ├─ {fileName.replace('components/', '')}</button>)}
+            </div>
+            <div className="explorer__folder">
+              <span>├─ ▾ lib</span>
+              {SOURCE_FILES.filter(([name]) => name.startsWith('lib/')).map(([fileName]) => <button type="button" className={sourceTabs.some((tab) => tab.fileName === fileName) ? 'is-active' : ''} key={fileName} onClick={() => openSource(fileName)}>│  ├─ {fileName.replace('lib/', '')}</button>)}
+            </div>
+            <div className="explorer__folder">
+              <span>└─ ▾ test</span>
+              {SOURCE_FILES.filter(([name]) => name.startsWith('test/')).map(([fileName]) => <button type="button" className={sourceTabs.some((tab) => tab.fileName === fileName) ? 'is-active' : ''} key={fileName} onClick={() => openSource(fileName)}>   └─ {fileName.replace('test/', '')}</button>)}
+            </div>
+          </div>
+          <footer>frames stay local, =^..^=</footer>
+        </aside>
         <div className="desktop">
           <p className="desktop__hint">Use ↗ to float, drag title bars to move, and resize from the lower-right corner.</p>
           <DesktopWindow id="camera-window" title="camera.ts" floating={floating.camera} visible={floating.camera || activeWindow === 'camera'} zIndex={zOrder.camera} initialPosition={{ x: 205, y: 110, width: 780, height: 650 }} onActivate={() => raiseWindow('camera')} onToggleFloating={() => toggleFloating('camera')}>{cameraContent}</DesktopWindow>

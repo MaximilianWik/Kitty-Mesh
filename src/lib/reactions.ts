@@ -21,6 +21,7 @@ export const REACTIONS: ReactionDefinition[] = [
   { id: 'fist', label: 'Closed fist', prompt: 'Close all five fingers into a fist.', mediaBaseName: 'fist', tone: [131, 196] },
   { id: 'point', label: 'Point', prompt: 'Extend only your index finger.', mediaBaseName: 'point', tone: [294, 440] },
   { id: 'peace', label: 'Peace sign', prompt: 'Extend your index and middle fingers.', mediaBaseName: 'peace', tone: [349, 523] },
+  { id: 'c-hand', label: 'Left C hand', prompt: 'Use your left hand to make a clear C shape.', mediaBaseName: 'c-hand', tone: [247, 370] },
   { id: 'thumbs-up', label: 'Thumbs up', prompt: 'Raise your thumb and fold the other fingers.', mediaBaseName: 'thumbs-up', tone: [392, 587] },
 ]
 

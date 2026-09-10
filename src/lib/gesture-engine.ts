@@ -51,6 +51,7 @@ export function analyzeHands(
     fist: 0,
     point: 0,
     peace: 0,
+    'c-hand': 0,
     'thumbs-up': 0,
   }
 
@@ -99,9 +100,24 @@ export function analyzeHands(
       confidence = 0.93
     }
 
+    const label = handedness[handIndex]
+    const isLeftHand = label === 'Left'
+    const palmScale = Math.max(distance(points[0], points[9]), 0.001)
+    const thumbIndexGap = distance(points[4], points[8]) / palmScale
+    const curvedFingers = [
+      jointAngle(points[5], points[6], points[8]),
+      jointAngle(points[9], points[10], points[12]),
+      jointAngle(points[13], points[14], points[16]),
+      jointAngle(points[17], points[18], points[20]),
+    ].filter((angle) => angle > 75 && angle < 145).length
+
+    if (isLeftHand && gesture === 'unclassified' && thumbIndexGap > 1.05 && thumbIndexGap < 2.4 && curvedFingers >= 2) {
+      gesture = 'c-hand'
+      confidence = Math.min(0.94, 0.62 + curvedFingers * 0.08)
+    }
+
     if (gesture !== 'unclassified') scores[gesture] = Math.max(scores[gesture], confidence)
 
-    const label = handedness[handIndex]
     return [{
       handedness: label === 'Left' || label === 'Right' ? label : 'Unknown',
       gesture,
@@ -330,6 +346,7 @@ export class GestureEngine {
     fist: 0,
     point: 0,
     peace: 0,
+    'c-hand': 0,
     'thumbs-up': 0,
   }
 
@@ -345,6 +362,7 @@ export class GestureEngine {
       ['spin', spin.complete ? 1 : 0, 0.9],
       ['hands', this.smoothed.hands, 0.52],
       ['peace', this.smoothed.peace, 0.62],
+      ['c-hand', this.smoothed['c-hand'], 0.58],
       ['thumbs-up', this.smoothed['thumbs-up'], 0.62],
       ['point', this.smoothed.point, 0.62],
       ['fist', this.smoothed.fist, 0.62],

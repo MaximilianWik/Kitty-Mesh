@@ -1,15 +1,58 @@
 {
-  "blank": { "image": null, "audio": null },
-  "profile": { "image": null, "audio": null },
-  "tongue": { "image": null, "audio": null },
-  "happy": { "image": null, "audio": null },
-  "kiss": { "image": null, "audio": null },
-  "spin": { "image": null, "audio": null },
-  "angry": { "image": null, "audio": null },
-  "hands": { "image": null, "audio": null },
-  "open-palm": { "image": null, "audio": null },
-  "fist": { "image": null, "audio": null },
-  "point": { "image": null, "audio": null },
-  "peace": { "image": null, "audio": null },
-  "thumbs-up": { "image": null, "audio": null }
+  "blank": {
+    "image": null,
+    "audio": null
+  },
+  "profile": {
+    "image": null,
+    "audio": null
+  },
+  "tongue": {
+    "image": null,
+    "audio": null
+  },
+  "happy": {
+    "image": null,
+    "audio": null
+  },
+  "kiss": {
+    "image": null,
+    "audio": null
+  },
+  "spin": {
+    "image": null,
+    "audio": null
+  },
+  "angry": {
+    "image": null,
+    "audio": null
+  },
+  "hands": {
+    "image": null,
+    "audio": null
+  },
+  "open-palm": {
+    "image": null,
+    "audio": null
+  },
+  "fist": {
+    "image": null,
+    "audio": null
+  },
+  "point": {
+    "image": "point.jpg",
+    "audio": null
+  },
+  "peace": {
+    "image": null,
+    "audio": null
+  },
+  "thumbs-up": {
+    "image": null,
+    "audio": null
+  },
+  "c-hand": {
+    "image": null,
+    "audio": null
+  }
 }
