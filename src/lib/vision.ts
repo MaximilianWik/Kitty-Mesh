@@ -1,8 +1,9 @@
 import {
   FaceLandmarker,
   FilesetResolver,
+  HandLandmarker,
   PoseLandmarker,
-  type FaceLandmarkerResult,
+  type HandLandmarkerResult,
   type PoseLandmarkerResult,
 } from '@mediapipe/tasks-vision'
 import { GestureEngine, extractSignals } from './gesture-engine'
@@ -21,8 +22,12 @@ const FACE_MODEL =
   'https://storage.googleapis.com/mediapipe-models/face_landmarker/face_landmarker/float16/1/face_landmarker.task'
 const POSE_MODEL =
   'https://storage.googleapis.com/mediapipe-models/pose_landmarker/pose_landmarker_lite/float16/1/pose_landmarker_lite.task'
-const FRAME_INTERVAL = 1000 / 20
-const POSE_INTERVAL = 1000 / 12
+const HAND_MODEL =
+  'https://storage.googleapis.com/mediapipe-models/hand_landmarker/hand_landmarker/float16/1/hand_landmarker.task'
+
+const FRAME_INTERVAL = 1000 / 30
+const POSE_INTERVAL = 1000 / 15
+const HAND_INTERVAL = 1000 / 20
 
 type SnapshotListener = (snapshot: VisionSnapshot, landmarks: FrameLandmarks) => void
 type EventListener = (event: RuntimeEvent) => void
@@ -30,17 +35,20 @@ type EventListener = (event: RuntimeEvent) => void
 export class VisionRuntime {
   private face?: FaceLandmarker
   private pose?: PoseLandmarker
+  private hand?: HandLandmarker
   private engine = new GestureEngine()
   private frameRequest = 0
   private loaded = false
   private lastVideoTime = -1
   private lastFrameAt = 0
   private lastPoseAt = 0
+  private lastHandAt = 0
   private previousFrameAt = 0
   private eventId = 0
   private running = false
   private counters: RuntimeCounters = { ...INITIAL_SNAPSHOT.counters }
   private latestPose: PoseLandmarkerResult | undefined
+  private latestHands: HandLandmarkerResult | undefined
   private lastSnapshot: VisionSnapshot = INITIAL_SNAPSHOT
 
   constructor(
@@ -55,36 +63,40 @@ export class VisionRuntime {
 
     this.emit('face.detect', 'Loading face model', 'float16 / v1')
     this.face = await FaceLandmarker.createFromOptions(vision, {
-      baseOptions: {
-        modelAssetPath: FACE_MODEL,
-        delegate: 'GPU',
-      },
+      baseOptions: { modelAssetPath: FACE_MODEL, delegate: 'GPU' },
       runningMode: 'VIDEO',
       numFaces: 1,
-      minFaceDetectionConfidence: 0.5,
-      minFacePresenceConfidence: 0.5,
-      minTrackingConfidence: 0.5,
+      minFaceDetectionConfidence: 0.45,
+      minFacePresenceConfidence: 0.45,
+      minTrackingConfidence: 0.45,
       outputFaceBlendshapes: true,
     })
 
     this.emit('pose.detect', 'Loading pose model', 'lite / float16 / v1')
     this.pose = await PoseLandmarker.createFromOptions(vision, {
-      baseOptions: {
-        modelAssetPath: POSE_MODEL,
-        delegate: 'GPU',
-      },
+      baseOptions: { modelAssetPath: POSE_MODEL, delegate: 'GPU' },
       runningMode: 'VIDEO',
       numPoses: 1,
-      minPoseDetectionConfidence: 0.48,
-      minPosePresenceConfidence: 0.48,
-      minTrackingConfidence: 0.48,
+      minPoseDetectionConfidence: 0.45,
+      minPosePresenceConfidence: 0.45,
+      minTrackingConfidence: 0.45,
       outputSegmentationMasks: false,
+    })
+
+    this.emit('hand.detect', 'Loading hand model', 'float16 / v1')
+    this.hand = await HandLandmarker.createFromOptions(vision, {
+      baseOptions: { modelAssetPath: HAND_MODEL, delegate: 'GPU' },
+      runningMode: 'VIDEO',
+      numHands: 2,
+      minHandDetectionConfidence: 0.42,
+      minHandPresenceConfidence: 0.42,
+      minTrackingConfidence: 0.42,
     })
     this.loaded = true
   }
 
   start(video: HTMLVideoElement) {
-    if (!this.face || !this.pose) throw new Error('Vision models are not loaded yet.')
+    if (!this.face || !this.pose || !this.hand) throw new Error('Vision models are not loaded yet.')
     this.running = true
     this.previousFrameAt = performance.now()
     this.loop(video)
@@ -100,6 +112,7 @@ export class VisionRuntime {
     this.stop()
     this.face?.close()
     this.pose?.close()
+    this.hand?.close()
   }
 
   private loop = (video: HTMLVideoElement) => {
@@ -128,6 +141,13 @@ export class VisionRuntime {
     const faceResult = this.face!.detectForVideo(video, now)
     this.counters.faceCalls += 1
 
+    if (now - this.lastHandAt >= HAND_INTERVAL) {
+      this.emit('hand.detect', 'HandLandmarker.detectForVideo', `${Math.round(now)} ms`)
+      this.latestHands = this.hand!.detectForVideo(video, now)
+      this.lastHandAt = now
+      this.counters.handCalls += 1
+    }
+
     if (now - this.lastPoseAt >= POSE_INTERVAL) {
       this.emit('pose.detect', 'PoseLandmarker.detectForVideo', `${Math.round(now)} ms`)
       this.latestPose = this.pose!.detectForVideo(video, now)
@@ -137,8 +157,13 @@ export class VisionRuntime {
 
     const face = faceResult.faceLandmarks[0]
     const pose = this.latestPose?.landmarks[0]
-    this.emit('signals.extract', 'Extract landmarks and blendshapes', `${face?.length ?? 0} face points`)
-    const signals = extractSignals(faceResult.faceBlendshapes[0], face, pose)
+    const hands = this.latestHands?.landmarks ?? []
+    const handedness = (this.latestHands?.handedness ?? []).map(
+      (categories) => categories[0]?.categoryName ?? 'Unknown',
+    )
+
+    this.emit('signals.extract', 'Extract landmarks and blendshapes', `${face?.length ?? 0} face / ${hands.length} hand`)
+    const signals = extractSignals(faceResult.faceBlendshapes[0], face, pose, hands, handedness)
 
     this.emit('spin.update', 'Advance rotation sequence', `${this.lastSnapshot.spinStage}`)
     const classified = this.engine.update(signals, now)
@@ -162,6 +187,8 @@ export class VisionRuntime {
       spinProgress: classified.spinProgress,
       faceTracked: signals.faceTracked,
       poseTracked: signals.poseTracked,
+      handTracked: signals.handTracked,
+      hands: signals.hands,
       fps: 1000 / delta,
       latencyMs: elapsed,
       frame: this.counters.frames,
@@ -173,17 +200,12 @@ export class VisionRuntime {
     this.onSnapshot(snapshot, {
       face: face ? [...face] : [],
       pose: pose ? [...pose] : [],
+      hands: hands.map((points) => [...points]),
     })
   }
 
   private emit(step: RuntimeStepId, label: string, value: string) {
-    this.onEvent({
-      id: ++this.eventId,
-      step,
-      label,
-      value,
-      at: performance.now(),
-    })
+    this.onEvent({ id: ++this.eventId, step, label, value, at: performance.now() })
   }
 }
 
@@ -198,5 +220,3 @@ export function describeCameraError(error: unknown) {
 export function stopMediaStream(stream: MediaStream | null) {
   stream?.getTracks().forEach((track) => track.stop())
 }
-
-export type { FaceLandmarkerResult }

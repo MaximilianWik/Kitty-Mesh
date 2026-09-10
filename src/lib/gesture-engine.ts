@@ -1,7 +1,10 @@
 import type { Classifications } from '@mediapipe/tasks-vision'
 import type {
+  FingerId,
   GestureId,
   GestureScores,
+  HandGestureId,
+  HandObservation,
   LandmarkPoint,
   RuntimeStepId,
   SpinStage,
@@ -9,6 +12,7 @@ import type {
 
 const clamp = (value: number, min = 0, max = 1) => Math.min(max, Math.max(min, value))
 const average = (...values: number[]) => values.reduce((sum, value) => sum + value, 0) / values.length
+const distance = (a: LandmarkPoint, b: LandmarkPoint) => Math.hypot(a.x - b.x, a.y - b.y, a.z - b.z)
 
 const scoreOf = (blendshapes: Classifications | undefined, name: string) =>
   blendshapes?.categories.find((category) => category.categoryName === name)?.score ?? 0
@@ -16,18 +20,109 @@ const scoreOf = (blendshapes: Classifications | undefined, name: string) =>
 export interface ExtractedSignals {
   faceTracked: boolean
   poseTracked: boolean
+  handTracked: boolean
+  hands: HandObservation[]
   yaw: number
   shouldersVisible: boolean
   scores: Omit<GestureScores, 'spin'>
+}
+
+const FINGER_POINTS: Record<Exclude<FingerId, 'thumb'>, [number, number, number]> = {
+  index: [5, 6, 8],
+  middle: [9, 10, 12],
+  ring: [13, 14, 16],
+  pinky: [17, 18, 20],
+}
+
+function jointAngle(a: LandmarkPoint, joint: LandmarkPoint, c: LandmarkPoint) {
+  const ab = { x: a.x - joint.x, y: a.y - joint.y, z: a.z - joint.z }
+  const cb = { x: c.x - joint.x, y: c.y - joint.y, z: c.z - joint.z }
+  const dot = ab.x * cb.x + ab.y * cb.y + ab.z * cb.z
+  const length = Math.hypot(ab.x, ab.y, ab.z) * Math.hypot(cb.x, cb.y, cb.z)
+  return length ? Math.acos(clamp(dot / length, -1, 1)) * (180 / Math.PI) : 0
+}
+
+export function analyzeHands(
+  handLandmarks: LandmarkPoint[][] = [],
+  handedness: string[] = [],
+): { observations: HandObservation[]; scores: Pick<GestureScores, HandGestureId> } {
+  const scores: Pick<GestureScores, HandGestureId> = {
+    'open-palm': 0,
+    fist: 0,
+    point: 0,
+    peace: 0,
+    'thumbs-up': 0,
+  }
+
+  const observations = handLandmarks.flatMap((points, handIndex): HandObservation[] => {
+    if (points.length < 21) return []
+    const wrist = points[0]
+    const palmCenter = points[9]
+    const fingers = {} as Record<FingerId, boolean>
+
+    for (const [finger, [mcpIndex, pipIndex, tipIndex]] of Object.entries(FINGER_POINTS) as Array<
+      [Exclude<FingerId, 'thumb'>, [number, number, number]]
+    >) {
+      const mcp = points[mcpIndex]
+      const pip = points[pipIndex]
+      const tip = points[tipIndex]
+      fingers[finger] =
+        jointAngle(mcp, pip, tip) > 150 &&
+        distance(tip, wrist) > distance(pip, wrist) * 1.08
+    }
+
+    const thumbMcp = points[2]
+    const thumbIp = points[3]
+    const thumbTip = points[4]
+    fingers.thumb =
+      jointAngle(thumbMcp, thumbIp, thumbTip) > 145 &&
+      distance(thumbTip, palmCenter) > distance(thumbIp, palmCenter) * 1.12
+
+    const extended = Object.values(fingers).filter(Boolean).length
+    let gesture: HandObservation['gesture'] = 'unclassified'
+    let confidence = 0.5
+
+    if (extended === 5) {
+      gesture = 'open-palm'
+      confidence = 0.95
+    } else if (extended === 0) {
+      gesture = 'fist'
+      confidence = 0.9
+    } else if (fingers.index && !fingers.middle && !fingers.ring && !fingers.pinky && !fingers.thumb) {
+      gesture = 'point'
+      confidence = 0.92
+    } else if (fingers.index && fingers.middle && !fingers.ring && !fingers.pinky) {
+      gesture = 'peace'
+      confidence = fingers.thumb ? 0.76 : 0.94
+    } else if (fingers.thumb && !fingers.index && !fingers.middle && !fingers.ring && !fingers.pinky && thumbTip.y < wrist.y) {
+      gesture = 'thumbs-up'
+      confidence = 0.93
+    }
+
+    if (gesture !== 'unclassified') scores[gesture] = Math.max(scores[gesture], confidence)
+
+    const label = handedness[handIndex]
+    return [{
+      handedness: label === 'Left' || label === 'Right' ? label : 'Unknown',
+      gesture,
+      confidence,
+      fingers,
+    }]
+  })
+
+  return { observations, scores }
 }
 
 export function extractSignals(
   blendshapes: Classifications | undefined,
   face: LandmarkPoint[] | undefined,
   pose: LandmarkPoint[] | undefined,
+  handLandmarks: LandmarkPoint[][] = [],
+  handedness: string[] = [],
 ): ExtractedSignals {
   const faceTracked = Boolean(face?.length)
   const poseTracked = Boolean(pose?.length)
+  const handAnalysis = analyzeHands(handLandmarks, handedness)
 
   const leftEye = face?.[33]
   const rightEye = face?.[263]
@@ -47,7 +142,17 @@ export function extractSignals(
     scoreOf(blendshapes, 'mouthUpperUpRight'),
   )
   const mouthClose = scoreOf(blendshapes, 'mouthClose')
-  const tongue = clamp(jawOpen * 0.72 + mouthLower * 0.2 + mouthUpper * 0.16 - mouthClose * 0.3)
+  const tongue = clamp(jawOpen * 0.78 + mouthLower * 0.24 + mouthUpper * 0.16 - mouthClose * 0.2)
+
+  const smile = average(
+    scoreOf(blendshapes, 'mouthSmileLeft'),
+    scoreOf(blendshapes, 'mouthSmileRight'),
+  )
+  const cheekSquint = average(
+    scoreOf(blendshapes, 'cheekSquintLeft'),
+    scoreOf(blendshapes, 'cheekSquintRight'),
+  )
+  const happy = clamp(smile * 0.82 + cheekSquint * 0.18 - jawOpen * 0.08)
 
   const browDown = average(
     scoreOf(blendshapes, 'browDownLeft'),
@@ -72,8 +177,7 @@ export function extractSignals(
     browDown,
     noseSneer,
     squint,
-    scoreOf(blendshapes, 'mouthSmileLeft'),
-    scoreOf(blendshapes, 'mouthSmileRight'),
+    smile,
     scoreOf(blendshapes, 'eyeWideLeft'),
     scoreOf(blendshapes, 'eyeWideRight'),
   )
@@ -86,23 +190,27 @@ export function extractSignals(
   const visible = (point: LandmarkPoint | undefined) => Boolean(point && (point.visibility ?? 1) > 0.55)
   const shouldersVisible = visible(leftShoulder) && visible(rightShoulder)
   const hands =
-    shouldersVisible &&
-    visible(leftWrist) &&
-    visible(rightWrist) &&
-    leftWrist!.y < leftShoulder!.y - 0.025 &&
-    rightWrist!.y < rightShoulder!.y - 0.025
-      ? clamp(
-          ((leftShoulder!.y - leftWrist!.y) + (rightShoulder!.y - rightWrist!.y)) /
-            0.42,
-        )
+    shouldersVisible && visible(leftWrist) && visible(rightWrist) &&
+    leftWrist!.y < leftShoulder!.y - 0.025 && rightWrist!.y < rightShoulder!.y - 0.025
+      ? clamp(((leftShoulder!.y - leftWrist!.y) + (rightShoulder!.y - rightWrist!.y)) / 0.42)
       : 0
 
   return {
     faceTracked,
     poseTracked,
+    handTracked: handAnalysis.observations.length > 0,
+    hands: handAnalysis.observations,
     yaw,
     shouldersVisible,
-    scores: { blank, profile, tongue, angry, hands },
+    scores: {
+      blank,
+      profile,
+      tongue,
+      happy,
+      angry,
+      hands,
+      ...handAnalysis.scores,
+    },
   }
 }
 
@@ -120,9 +228,7 @@ export class SpinTracker {
   private completedAt = 0
 
   update(yaw: number, faceTracked: boolean, poseTracked: boolean, now: number): SpinResult {
-    if (this.stage !== 'ready' && this.stage !== 'complete' && now - this.startedAt > 12_000) {
-      this.reset()
-    }
+    if (this.stage !== 'ready' && this.stage !== 'complete' && now - this.startedAt > 12_000) this.reset()
 
     if (this.stage === 'complete') {
       if (now - this.completedAt > 1_600) this.reset()
@@ -136,7 +242,7 @@ export class SpinTracker {
     } else if (this.stage === 'first-side') {
       if (!faceTracked && poseTracked) {
         this.faceMissingSince ||= now
-        if (now - this.faceMissingSince > 220) this.stage = 'away'
+        if (now - this.faceMissingSince > 180) this.stage = 'away'
       } else {
         this.faceMissingSince = 0
       }
@@ -154,12 +260,7 @@ export class SpinTracker {
       'opposite-side': 0.82,
       complete: 1,
     }
-
-    return {
-      stage: this.stage,
-      progress: progressByStage[this.stage],
-      complete: this.stage === 'complete',
-    }
+    return { stage: this.stage, progress: progressByStage[this.stage], complete: this.stage === 'complete' }
   }
 
   reset() {
@@ -188,15 +289,15 @@ export class GestureStabilizer {
       this.candidateSince = now
     }
 
-    const requiredHold = candidate === 'blank' ? 760 : candidate === 'spin' ? 180 : 360
-    const leavingHold = candidate === 'idle' ? 260 : requiredHold
-    const canChange = now - this.lastChangeAt > 420
+    const requiredHold = candidate === 'blank' ? 420 : candidate === 'spin' ? 100 : 120
+    const leavingHold = candidate === 'idle' ? 150 : requiredHold
+    const canChange = now - this.lastChangeAt > 160
 
     if (
       candidate !== this.stable &&
       now - this.candidateSince >= leavingHold &&
       canChange &&
-      (candidate === 'idle' || confidence >= 0.48)
+      (candidate === 'idle' || confidence >= 0.25)
     ) {
       this.stable = candidate
       this.lastChangeAt = now
@@ -214,9 +315,15 @@ export class GestureEngine {
     blank: 0,
     profile: 0,
     tongue: 0,
+    happy: 0,
     angry: 0,
     hands: 0,
     spin: 0,
+    'open-palm': 0,
+    fist: 0,
+    point: 0,
+    peace: 0,
+    'thumbs-up': 0,
   }
 
   update(signals: ExtractedSignals, now: number) {
@@ -224,13 +331,19 @@ export class GestureEngine {
     const incoming: GestureScores = { ...signals.scores, spin: spin.complete ? 1 : spin.progress * 0.42 }
 
     for (const key of Object.keys(incoming) as Array<keyof GestureScores>) {
-      this.smoothed[key] = this.smoothed[key] * 0.68 + incoming[key] * 0.32
+      this.smoothed[key] = this.smoothed[key] * 0.52 + incoming[key] * 0.48
     }
 
     const ranked: Array<[GestureId, number, number]> = [
       ['spin', spin.complete ? 1 : 0, 0.9],
       ['hands', this.smoothed.hands, 0.52],
-      ['tongue', this.smoothed.tongue, 0.52],
+      ['peace', this.smoothed.peace, 0.62],
+      ['thumbs-up', this.smoothed['thumbs-up'], 0.62],
+      ['point', this.smoothed.point, 0.62],
+      ['fist', this.smoothed.fist, 0.62],
+      ['open-palm', this.smoothed['open-palm'], 0.62],
+      ['tongue', this.smoothed.tongue, 0.25],
+      ['happy', this.smoothed.happy, 0.38],
       ['angry', this.smoothed.angry, 0.4],
       ['profile', this.smoothed.profile, 0.52],
       ['blank', this.smoothed.blank, 0.62],

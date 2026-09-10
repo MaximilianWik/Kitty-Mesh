@@ -8,7 +8,7 @@ product
 Developers and curious visitors using a webcam in a modern browser. They want to test expression and pose recognition and inspect what the application is doing.
 
 ## Product Purpose
-Recognize six face and body states locally, show the current scores and execution path, and display the matched pose in a separate output view.
+Recognize face, body, hand, and individual finger states locally, show the current scores and execution path, and display the matched result in a separate movable output window.
 
 ## Brand Personality
 Direct, compact, utilitarian. The interface should resemble a late-1990s desktop IDE: plain panes, file tabs, status text, and visible source paths.

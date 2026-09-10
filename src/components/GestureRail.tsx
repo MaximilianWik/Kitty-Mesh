@@ -1,5 +1,5 @@
 import { REACTIONS } from '../lib/reactions'
-import type { GestureId, GestureScores, SpinStage } from '../lib/types'
+import type { GestureId, GestureScores, HandObservation, SpinStage } from '../lib/types'
 
 interface GestureRailProps {
   active: GestureId
@@ -7,9 +7,10 @@ interface GestureRailProps {
   scores: GestureScores
   spinStage: SpinStage
   spinProgress: number
+  hands: HandObservation[]
 }
 
-export function GestureRail({ active, candidate, scores, spinStage, spinProgress }: GestureRailProps) {
+export function GestureRail({ active, candidate, scores, spinStage, spinProgress, hands }: GestureRailProps) {
   return (
     <section className="signals-pane" aria-labelledby="signals-title">
       <header className="pane-titlebar">
@@ -32,6 +33,7 @@ export function GestureRail({ active, candidate, scores, spinStage, spinProgress
       <footer className="spin-status">
         <span>360: {spinStage}</span>
         <progress max="1" value={spinProgress}>{Math.round(spinProgress * 100)}%</progress>
+        <span>hands: {hands.length ? hands.map((hand) => `${hand.handedness} ${hand.gesture}`).join(' / ') : 'none'}</span>
       </footer>
     </section>
   )

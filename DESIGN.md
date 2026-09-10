@@ -26,7 +26,7 @@ Use one compact monospace stack throughout because the entire product is present
 There is no elevation system. Separate panes with one-pixel borders and small surface-lightness changes. Corners remain square. Do not use shadows.
 
 # Components
-The UI consists of a title bar, menu bar, file tabs, explorer, camera editor, source trace, signal watch table, Match Output editor, reference illustrations, and status bar. Controls follow one square desktop-button pattern.
+The UI consists of a title bar, menu bar, file tabs, explorer, draggable desktop windows, camera editor, source trace, signal watch table, Match Output window, reference illustrations, future media slots, and status bar. Controls follow one square desktop-button pattern.
 
 # Do's and Don'ts
 - Do use real file names, values, events, and source lines.

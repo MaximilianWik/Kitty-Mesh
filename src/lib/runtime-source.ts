@@ -13,12 +13,7 @@ interface SourceAnchor {
   includes: string
 }
 
-function mapSource(
-  name: string,
-  path: string,
-  source: string,
-  anchors: SourceAnchor[],
-): RuntimeModule {
+function mapSource(name: string, path: string, source: string, anchors: SourceAnchor[]): RuntimeModule {
   const sourceLines = source.split('\n')
   return {
     name,
@@ -35,6 +30,7 @@ export const RUNTIME_MODULES: RuntimeModule[] = [
   mapSource('frame-loop', 'src/lib/vision.ts', visionSource, [
     { step: 'camera.read', includes: "this.emit('camera.read', 'Camera frame'" },
     { step: 'face.detect', includes: 'const faceResult = this.face!.detectForVideo' },
+    { step: 'hand.detect', includes: 'this.latestHands = this.hand!.detectForVideo' },
     { step: 'pose.detect', includes: 'this.latestPose = this.pose!.detectForVideo' },
     { step: 'signals.extract', includes: 'const signals = extractSignals' },
     { step: 'reaction.dispatch', includes: "this.emit('reaction.dispatch', 'Dispatch reaction'" },

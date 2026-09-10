@@ -1,11 +1,29 @@
-export type GestureId =
-  | 'idle'
+export type FacePoseId =
   | 'blank'
   | 'profile'
   | 'tongue'
-  | 'spin'
+  | 'happy'
   | 'angry'
-  | 'hands'
+
+export type BodyPoseId = 'spin' | 'hands'
+
+export type HandGestureId =
+  | 'open-palm'
+  | 'fist'
+  | 'point'
+  | 'peace'
+  | 'thumbs-up'
+
+export type GestureId = 'idle' | FacePoseId | BodyPoseId | HandGestureId
+
+export type FingerId = 'thumb' | 'index' | 'middle' | 'ring' | 'pinky'
+
+export interface HandObservation {
+  handedness: 'Left' | 'Right' | 'Unknown'
+  gesture: HandGestureId | 'unclassified'
+  confidence: number
+  fingers: Record<FingerId, boolean>
+}
 
 export type TrackingStatus =
   | 'idle'
@@ -20,9 +38,15 @@ export interface GestureScores {
   blank: number
   profile: number
   tongue: number
+  happy: number
   angry: number
   hands: number
   spin: number
+  'open-palm': number
+  fist: number
+  point: number
+  peace: number
+  'thumbs-up': number
 }
 
 export interface VisionSnapshot {
@@ -34,6 +58,8 @@ export interface VisionSnapshot {
   spinProgress: number
   faceTracked: boolean
   poseTracked: boolean
+  handTracked: boolean
+  hands: HandObservation[]
   fps: number
   latencyMs: number
   frame: number
@@ -45,6 +71,7 @@ export interface RuntimeCounters {
   frames: number
   faceCalls: number
   poseCalls: number
+  handCalls: number
   classifications: number
   transitions: number
 }
@@ -53,6 +80,7 @@ export type RuntimeStepId =
   | 'camera.read'
   | 'face.detect'
   | 'pose.detect'
+  | 'hand.detect'
   | 'signals.extract'
   | 'spin.update'
   | 'gesture.rank'
@@ -77,15 +105,22 @@ export interface LandmarkPoint {
 export interface FrameLandmarks {
   face: LandmarkPoint[]
   pose: LandmarkPoint[]
+  hands: LandmarkPoint[][]
 }
 
 export const EMPTY_SCORES: GestureScores = {
   blank: 0,
   profile: 0,
   tongue: 0,
+  happy: 0,
   angry: 0,
   hands: 0,
   spin: 0,
+  'open-palm': 0,
+  fist: 0,
+  point: 0,
+  peace: 0,
+  'thumbs-up': 0,
 }
 
 export const INITIAL_SNAPSHOT: VisionSnapshot = {
@@ -97,6 +132,8 @@ export const INITIAL_SNAPSHOT: VisionSnapshot = {
   spinProgress: 0,
   faceTracked: false,
   poseTracked: false,
+  handTracked: false,
+  hands: [],
   fps: 0,
   latencyMs: 0,
   frame: 0,
@@ -105,6 +142,7 @@ export const INITIAL_SNAPSHOT: VisionSnapshot = {
     frames: 0,
     faceCalls: 0,
     poseCalls: 0,
+    handCalls: 0,
     classifications: 0,
     transitions: 0,
   },

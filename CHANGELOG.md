@@ -2,6 +2,23 @@
 
 All notable changes to this project are documented here.
 
+## 0.3.0 · 2026-09-10
+
+### Added
+
+- MediaPipe hand tracking for up to two hands with 21 landmarks per hand.
+- Finger extension readout for thumb, index, middle, ring, and pinky.
+- Open palm, fist, point, peace, and thumbs-up gesture states.
+- Happy-face detection and a matching pose reference.
+- Draggable, resizable, stackable Camera and Match Output windows.
+- Named image and audio slots under `public/reactions/` for future media.
+
+### Changed
+
+- Lowered the tongue-out activation threshold to 0.25.
+- Reduced gesture hold times and increased face and hand inference rates for faster feedback.
+- Added hand skeletons, fingertip markers, and live hand labels to the camera overlay.
+
 ## 0.2.0 · 2026-09-10
 
 ### Changed
