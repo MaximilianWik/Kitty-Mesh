@@ -296,7 +296,7 @@ function App() {
         <div className="camera-toolbar"><span>{statusMessage}</span>{status === 'running' && <button type="button" onClick={stopCamera}>Stop camera</button>}<button type="button" onClick={() => setMenu('camera')}>Camera menu</button></div>
       </section>
       <PanelResizeHandle direction="vertical" label="Resize camera and reaction panels" onResize={setColumnSplit} />
-      <ReactionPane gesture={snapshot.gesture} confidence={snapshot.confidence} media={reactionMedia} />
+      <ReactionPane gesture={snapshot.gesture} media={reactionMedia} personDetected={snapshot.faceTracked || snapshot.poseTracked || snapshot.hands.length > 0} />
       <PanelResizeHandle direction="horizontal" label="Resize top feeds and gesture-engine panel" onResize={setRowSplit} />
       <RuntimePanel snapshot={snapshot} events={events} />
     </div>

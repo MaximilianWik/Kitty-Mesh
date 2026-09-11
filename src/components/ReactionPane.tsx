@@ -4,25 +4,22 @@ import type { GestureId } from '../lib/types'
 
 interface ReactionPaneProps {
   gesture: GestureId
-  confidence: number
   media: ReactionMediaMap | null
+  personDetected: boolean
 }
 
-export function ReactionPane({ gesture, confidence, media }: ReactionPaneProps) {
+export function ReactionPane({ gesture, media, personDetected }: ReactionPaneProps) {
   const reaction = gesture === 'idle' ? null : REACTION_BY_ID[gesture]
   const imageUrl = mediaUrl(reaction ? media?.[reaction.id]?.image ?? null : null)
-  const audioUrl = mediaUrl(reaction ? media?.[reaction.id]?.audio ?? null : null)
 
   return (
     <section className="reaction-pane" aria-label="Reaction preview">
-      <header className="pane-titlebar"><span>reaction.ts</span></header>
-      <div className="reaction-pane__body">
-        <div className="reaction-media-slot">
-          {imageUrl ? <img src={imageUrl} alt={`${reaction!.label} reaction media`} /> : <pre aria-hidden="true">{reaction ? `[ ${reaction.id.toUpperCase()} ]` : '[ WAITING ]'}</pre>}
-        </div>
-        <h1>{reaction?.label ?? 'No reaction yet'}</h1>
-        <p>{reaction?.prompt ?? 'Kitty Mesh will show the next detected state here.'}</p>
-        {reaction && <dl><div><dt>confidence</dt><dd>{Math.round(confidence * 100)}%</dd></div><div><dt>image</dt><dd>{imageUrl ?? 'waiting for media'}</dd></div><div><dt>sound</dt><dd>{audioUrl ?? 'built-in tone'}</dd></div></dl>}
+      <div className="reaction-media-slot">
+        {imageUrl ? (
+          <img src={imageUrl} alt="" />
+        ) : !personDetected ? (
+          <pre aria-hidden="true">[ NO PERSON DETECTED ]</pre>
+        ) : null}
       </div>
     </section>
   )

@@ -1,5 +1,16 @@
 # Changelog
 
+## 0.5.3 · 2026-09-11
+
+### Added
+
+- Added a "no person detected" placeholder in reaction.ts, shown whenever no face, pose, or hands are tracked.
+
+### Changed
+
+- Stripped all text from reaction.ts: no title bar, no label, no prompt, no confidence/image/sound details. It now shows only the reaction image.
+- Made the reaction image scale to fit the entire pane (full width and height) instead of a fixed 260×180 box, matching the camera feed's full-frame fit.
+
 ## 0.5.2 · 2026-09-11
 
 ### Added

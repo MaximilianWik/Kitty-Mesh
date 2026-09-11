@@ -76,7 +76,6 @@ button:disabled { color: #68575a; cursor: wait; }
 .panel-resize--horizontal::after { content: '⋯'; transform: rotate(90deg); }
 .camera-workspace > .reaction-pane { grid-column: 3; grid-row: 1; border-top: 0; }
 .camera-workspace > .runtime-pane { grid-column: 1 / -1; grid-row: 3; }
-.camera-workspace > .reaction-pane .pane-titlebar { border-bottom: 1px solid var(--line); }
 .pane-titlebar { justify-content: space-between; min-height: 27px; padding: 0 8px; background: var(--panel-alt); color: var(--muted); }
 .camera-viewport { position: relative; min-height: 280px; overflow: hidden; background: #030203; }
 .camera-video, .landmark-layer { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: contain; }
@@ -123,17 +122,10 @@ button:disabled { color: #68575a; cursor: wait; }
 .help-pane, .reaction-pane { min-height: 100%; background: #0d0d0d; }
 .help-pane > div { max-width: 58ch; padding: 20px; line-height: 1.55; }
 .help-pane h1 { margin-top: 0; color: var(--accent); font-size: 1.25rem; }
-.reaction-pane { display: grid; grid-template-rows: 27px minmax(0, 1fr); min-height: 0; border-top: 1px solid var(--line); }
-.reaction-pane__body { display: grid; grid-template-rows: 180px auto auto minmax(0, 1fr); place-items: center; align-content: center; gap: 6px; min-height: 0; padding: 12px; overflow: auto; text-align: center; }
-.reaction-media-slot { display: grid; width: min(100%, 260px); height: 180px; place-items: center; overflow: hidden; }
-.reaction-media-slot img { display: block; width: 100%; height: 100%; object-fit: contain; }
+.reaction-pane { display: grid; min-height: 0; }
+.reaction-media-slot { display: grid; width: 100%; height: 100%; place-items: center; overflow: hidden; padding: 8px; }
+.reaction-media-slot img { display: block; max-width: 100%; max-height: 100%; width: auto; height: auto; object-fit: contain; }
 .reaction-media-slot pre { margin: 0; padding: 16px; border: 1px solid var(--line); color: var(--accent); background: #080808; }
-.reaction-pane__body h1 { margin: 0; color: var(--text); font-size: 1.1rem; }
-.reaction-pane__body p { max-width: 46ch; margin: 0; color: var(--muted); }
-.reaction-pane__body dl { width: min(100%, 480px); margin: 8px 0 0; text-align: left; }
-.reaction-pane__body dl div { display: grid; grid-template-columns: 100px 1fr; gap: 8px; padding: 5px 0; border-top: 1px solid var(--line-dark); }
-.reaction-pane__body dt { color: var(--muted); }
-.reaction-pane__body dd { margin: 0; overflow-wrap: anywhere; color: var(--accent); }
 
 .status-bar { gap: 18px; padding: 0 8px; border-top: 1px solid #3f7b47; border-bottom: 0; color: #d7d7d7; background: #101010; }
 .status-bar span:last-child { margin-left: auto; }
