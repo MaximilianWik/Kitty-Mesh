@@ -1,3 +1,5 @@
+import { renderMarkdown } from '../lib/markdown'
+
 interface SourceViewerProps {
   fileName: string
   source: string
@@ -24,7 +26,7 @@ export function HelpPane({ source, onClose }: { source: string; onClose: () => v
   return (
     <section className="help-pane" aria-label="Kitty Mesh help">
       <header className="pane-titlebar"><span>about-kitty-mesh.txt</span><button type="button" onClick={onClose}>close</button></header>
-      <pre className="help-pane__readme">{source.replaceAll('\r\n', '\n')}</pre>
+      <article className="help-pane__readme">{renderMarkdown(source)}</article>
     </section>
   )
 }
