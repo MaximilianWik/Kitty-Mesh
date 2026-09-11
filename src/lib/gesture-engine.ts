@@ -288,7 +288,7 @@ export class GestureEngine {
       ['open-palm', this.smoothed['open-palm'], 0.62],
       ['tongue', this.smoothed.tongue, 0.25],
       ['kiss', this.smoothed.kiss, 0.38],
-      ['happy', this.smoothed.happy, 0.38],
+      ['happy', this.smoothed.happy, 0.46],
       ['angry', this.smoothed.angry, 0.4],
       ['profile', this.smoothed.profile, 0.52],
       ['blank', this.smoothed.blank, 0.3],
