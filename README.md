@@ -2,7 +2,7 @@
 
 **Live:** [kittymesh.vercel.app](https://kittymesh.vercel.app/) · **Source:** [github.com/MaximilianWik/Kitty-Mesh](https://github.com/MaximilianWik/Kitty-Mesh) · Built by [Maximilian Wikström](https://maximilian-wikstrom.vercel.app/)
 
-Kitty Mesh is a browser-only computer vision cockpit. It runs three MediaPipe Tasks Vision models (face, pose, hand) against your webcam entirely on-device, classifies the result into one of twelve states through a hand-rolled scoring and stabilization pipeline, and renders the whole thing as a fake retro IDE. No backend, no upload, no telemetry. Just whiskers and WASM.
+Kitty Mesh is a browser-only computer vision cockpit. It runs three MediaPipe Tasks Vision models (face, pose, hand) against your webcam entirely on-device, classifies the result into one of sixteen states through a hand-rolled scoring and stabilization pipeline, and renders the whole thing as a fake retro IDE. No backend, no upload, no telemetry. Just whiskers and WASM.
 
 ## ( ^ω^ ) Inference pipeline
 
@@ -18,34 +18,39 @@ Face runs every tick because expression state is the most latency-sensitive sign
 
 `extractSignals` (`src/lib/gesture-engine.ts`) turns raw landmarks and blendshapes into a `GestureScores` vector, one float per state, computed independently every frame:
 
-- **Face states** are weighted blendshape blends. Happy = 82% smile + 18% cheek squint, minus jaw-open leakage. Angry = 48% brow-down + 28% nose-sneer + 16% eye-squint + 8% mouth-press. Kiss = 64% pucker + 28% funnel + 8% shrug-lower, minus jaw-open, mouth-lower, and MediaPipe's `tongueOut` blendshape (kiss and tongue are mutually exclusive mouth shapes, so each suppresses the other). Tongue is jaw-open + mouth-lower/upper geometry with `tongueOut` as a boost, not the primary signal. MediaPipe's `tongueOut` blendshape is notoriously under-trained on 2D webcam input and reads near-zero even with the tongue clearly out.
+- **Face states** are weighted blendshape blends. Happy = 82% smile + 18% cheek squint, minus jaw-open leakage. Angry = 55% brow-down + 20% eye-squint + 15% mouth-press + 12% nose-sneer. Kiss = 64% pucker + 28% funnel + 8% shrug-lower, minus jaw-open, mouth-lower, and MediaPipe's `tongueOut` blendshape (kiss and tongue are mutually exclusive mouth shapes, so each suppresses the other). Disgust = 55% nose-sneer + 22% mouth-lower + 8% mouth-upper + 10% brow-down, minus smile and jaw-open, so it competes with angry on a different dominant channel instead of double-firing on the same one. Tongue is jaw-open + mouth-lower/upper geometry with `tongueOut` as a boost, not the primary signal. MediaPipe's `tongueOut` blendshape is notoriously under-trained on 2D webcam input and reads near-zero even with the tongue clearly out.
 - **Profile** comes from nose-to-eye-line yaw, normalized by inter-eye distance.
 - **Blank** is `1 − max(expressive activity) × 1.55 − profile × 0.45`, i.e. the least interesting frame wins.
 - **Hands up** needs both wrists above both shoulders by a visibility-gated margin, scored by how far above.
-- **Hand shapes** (fist, point, peace, rock, thumbs-up) come from joint angles at each finger's MCP-PIP-tip, plus a thumb-specific angle/extension check. Point is the index finger extended alone, with the thumb either folded or extended. Rock is index+pinky extended with middle/ring folded; peace is index+middle. Geometry, not a trained classifier, so an oddly angled hand can need a squint to convince it.
+- **Hand shapes** (fist, point, peace, rock, thumbs-up, ok, call-me) come from joint angles at each finger's MCP-PIP-tip, plus a thumb-specific angle/extension check. Point is the index finger extended alone, with the thumb either folded or extended. Rock is index+pinky extended with middle/ring folded; peace is index+middle; call-me is thumb+pinky with the rest folded. OK is the thumb and index tips pinched together (measured directly as a distance, normalized by hand scale) with middle/ring/pinky extended. Geometry, not a trained classifier, so an oddly angled hand can need a squint to convince it.
+- **Heart hands** is the only two-hand signal: it needs both hands present, and scores how close each hand's thumb+index midpoint sits to the other hand's, plus how tightly each hand's own thumb and index are pinched.
 
 Every score is exponentially smoothed (`smoothed = smoothed × 0.52 + incoming × 0.48`) before ranking, so a single noisy frame can't flip the state.
 
 ## (=^･ω･^=) Ranking and the stabilizer
 
-`GestureEngine.update` walks a fixed priority list, from `hands` down to `blank`, and picks the first score that clears its own threshold (0.18 for tongue up to 0.62 for hand shapes; face states get lower bars, hand geometry gets stricter ones). The winning candidate then has to survive `GestureStabilizer`: a candidate must hold for ≥120ms (420ms for blank, so a resting face doesn't flicker) and the stabilizer enforces a 160ms cooldown between any two committed transitions. This is why the state you see never chatters even though scores are computed 30 times a second.
+`GestureEngine.update` walks a fixed priority list, from `hands` down to `blank`, and picks the first score that clears its own threshold (0.2 for blank up to 0.62 for hand shapes; face states get lower bars, hand geometry gets stricter ones). The winning candidate then has to survive `GestureStabilizer`: a candidate must hold for ≥120ms (420ms for blank, so a resting face doesn't flicker) and the stabilizer enforces a 160ms cooldown between any two committed transitions. This is why the state you see never chatters even though scores are computed 30 times a second.
 
-## ( ・ω・)✿ Twelve states it hunts for
+## ( ・ω・)✿ Sixteen states it hunts for
 
 | State | Signal |
 | --- | --- |
-| Blank stare | Lowest expressive activity, ≥30% |
-| Side profile | Nose crosses the inter-eye line, yaw-normalized |
+| Blank stare | Lowest expressive activity, ≥20% |
+| Side profile | Nose crosses the inter-eye line, yaw-normalized, ≥52% |
 | Tongue out | Jaw-open + mouth-lower/upper geometry, boosted by `tongueOut`, ≥18% |
-| Happy face | Smile blendshapes + cheek squint |
-| Kiss face | Mouth pucker + funnel blendshapes |
-| Angry face | Brow-down + nose-sneer + eye-squint + mouth-press |
-| Hands up | Both wrists above both shoulders |
-| Closed fist | All five fingers folded |
-| Point | Index finger extended, thumb folded or extended |
-| Peace sign | Index + middle extended |
-| Rock sign | Index + pinky extended, middle/ring folded |
-| Thumbs up | Thumb extended, pointing above the wrist |
+| Happy face | Smile blendshapes + cheek squint, ≥46% |
+| Kiss face | Mouth pucker + funnel blendshapes, ≥38% |
+| Angry face | Brow-down + eye-squint + mouth-press + nose-sneer, ≥40% |
+| Disgust | Nose-sneer + mouth-lower/upper + brow-down, minus smile, ≥42% |
+| Hands up | Both wrists above both shoulders, ≥52% |
+| Closed fist | All five fingers folded, ≥62% |
+| Point | Index finger extended, thumb folded or extended, ≥62% |
+| Peace sign | Index + middle extended, ≥62% |
+| Rock sign | Index + pinky extended, middle/ring folded, ≥62% |
+| Thumbs up | Thumb extended, pointing above the wrist, ≥62% |
+| OK sign | Thumb and index tips pinched together, middle/ring/pinky extended, ≥62% |
+| Call me | Thumb + pinky extended, index/middle/ring folded, ≥62% |
+| Heart hands | Both hands' thumb+index tips brought together, ≥58% |
 
 ## (=ↀωↀ=)✧ The fake desktop
 
