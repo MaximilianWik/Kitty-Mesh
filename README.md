@@ -16,7 +16,7 @@ Face runs every tick because expression state is the most latency-sensitive sign
 
 `extractSignals` (`src/lib/gesture-engine.ts`) turns raw landmarks and blendshapes into a `GestureScores` vector, one float per state, computed independently every frame:
 
-- **Face states** are weighted blendshape blends. Happy = 82% smile + 18% cheek squint, minus jaw-open leakage. Angry = 48% brow-down + 28% nose-sneer + 16% eye-squint + 8% mouth-press. Kiss = 64% pucker + 28% funnel + 8% shrug-lower, minus jaw-open. Tongue is dominated by MediaPipe's own `tongueOut` blendshape (90% weight), with jaw-open and mouth-lower/upper as a minor assist for partial detections.
+- **Face states** are weighted blendshape blends. Happy = 82% smile + 18% cheek squint, minus jaw-open leakage. Angry = 48% brow-down + 28% nose-sneer + 16% eye-squint + 8% mouth-press. Kiss = 64% pucker + 28% funnel + 8% shrug-lower, minus jaw-open, mouth-lower, and MediaPipe's `tongueOut` blendshape (kiss and tongue are mutually exclusive mouth shapes, so each suppresses the other). Tongue is jaw-open + mouth-lower/upper geometry with `tongueOut` as a boost, not the primary signal — MediaPipe's `tongueOut` blendshape is notoriously under-trained on 2D webcam input and reads near-zero even with the tongue clearly out.
 - **Profile** comes from nose-to-eye-line yaw, normalized by inter-eye distance.
 - **Blank** is `1 − max(expressive activity) × 1.55 − profile × 0.45`, i.e. the least interesting frame wins.
 - **Hands up** needs both wrists above both shoulders by a visibility-gated margin, scored by how far above.
@@ -34,7 +34,7 @@ Every score is exponentially smoothed (`smoothed = smoothed × 0.52 + incoming �
 | --- | --- |
 | Blank stare | Lowest expressive activity, ≥30% |
 | Side profile | Nose crosses the inter-eye line, yaw-normalized |
-| Tongue out | `tongueOut` blendshape, ≥18% |
+| Tongue out | Jaw-open + mouth-lower/upper geometry, boosted by `tongueOut`, ≥18% |
 | Happy face | Smile blendshapes + cheek squint |
 | Kiss face | Mouth pucker + funnel blendshapes |
 | Angry face | Brow-down + nose-sneer + eye-squint + mouth-press |

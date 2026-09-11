@@ -144,7 +144,11 @@ export function extractSignals(
     scoreOf(blendshapes, 'mouthUpperUpRight'),
   )
   const mouthClose = scoreOf(blendshapes, 'mouthClose')
-  const tongue = clamp(tongueOut * 0.9 + jawOpen * 0.15 + mouthLower * 0.1 + mouthUpper * 0.06 - mouthClose * 0.15)
+  const mouthPucker = scoreOf(blendshapes, 'mouthPucker')
+  const tongue = clamp(
+    jawOpen * 0.5 + mouthLower * 0.3 + mouthUpper * 0.16 + tongueOut * 0.45
+    - mouthClose * 0.25 - mouthPucker * 0.2,
+  )
 
   const smile = average(
     scoreOf(blendshapes, 'mouthSmileLeft'),
@@ -156,9 +160,10 @@ export function extractSignals(
   )
   const happy = clamp(smile * 0.82 + cheekSquint * 0.18 - jawOpen * 0.08)
   const kiss = clamp(
-    scoreOf(blendshapes, 'mouthPucker') * 0.64 +
+    mouthPucker * 0.64 +
     scoreOf(blendshapes, 'mouthFunnel') * 0.28 +
-    scoreOf(blendshapes, 'mouthShrugLower') * 0.08 - jawOpen * 0.12,
+    scoreOf(blendshapes, 'mouthShrugLower') * 0.08
+    - jawOpen * 0.2 - mouthLower * 0.3 - tongueOut * 0.4,
   )
 
   const browDown = average(

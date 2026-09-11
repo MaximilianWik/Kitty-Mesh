@@ -1,5 +1,12 @@
 # Changelog
 
+## 0.5.9 · 2026-09-11
+
+### Fixed
+
+- Tongue detection was barely firing and almost always fell through to kiss. MediaPipe's `tongueOut` blendshape is unreliable on 2D webcam input (near-zero even with the tongue clearly out), so it was overweighted in the previous formula. Tongue now leans on jaw-open + mouth-lower/upper geometry again, with `tongueOut` as a smaller boost.
+- Kiss now explicitly suppresses itself when jaw-open, mouth-lower, or `tongueOut` are present, since kiss and tongue are mutually exclusive mouth shapes that were both lighting up together.
+
 ## 0.5.8 · 2026-09-11
 
 ### Added
