@@ -1,6 +1,7 @@
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
+import { useCallback, useEffect, useMemo, useRef, useState, type CSSProperties } from 'react'
 import { DesktopWindow } from './components/DesktopWindow'
 import { GestureRail } from './components/GestureRail'
+import { PanelResizeHandle } from './components/PanelResizeHandle'
 import { HelpPane, SourceViewer } from './components/SourceViewer'
 import { LandmarkLayer } from './components/LandmarkLayer'
 import { ReactionPane } from './components/ReactionPane'
@@ -15,6 +16,7 @@ import appSource from './App.tsx?raw'
 import desktopWindowSource from './components/DesktopWindow.tsx?raw'
 import gestureRailSource from './components/GestureRail.tsx?raw'
 import landmarkLayerSource from './components/LandmarkLayer.tsx?raw'
+import panelResizeHandleSource from './components/PanelResizeHandle.tsx?raw'
 import reactionPaneSource from './components/ReactionPane.tsx?raw'
 import runtimePanelSource from './components/RuntimePanel.tsx?raw'
 import sourceViewerSource from './components/SourceViewer.tsx?raw'
@@ -46,6 +48,7 @@ const SOURCE_FILES = [
   ['components/DesktopWindow.tsx', desktopWindowSource],
   ['components/GestureRail.tsx', gestureRailSource],
   ['components/LandmarkLayer.tsx', landmarkLayerSource],
+  ['components/PanelResizeHandle.tsx', panelResizeHandleSource],
   ['components/ReactionPane.tsx', reactionPaneSource],
   ['components/RuntimePanel.tsx', runtimePanelSource],
   ['components/SourceViewer.tsx', sourceViewerSource],
@@ -86,6 +89,7 @@ function App() {
   const [videoSize, setVideoSize] = useState({ width: 0, height: 0 })
   const [devices, setDevices] = useState<MediaDeviceInfo[]>([])
   const [selectedDeviceId, setSelectedDeviceId] = useState('')
+  const [panelSplit, setPanelSplit] = useState({ column: 0.62, row: 0.6, stacked: 0.5 })
 
   const sourceByName = useMemo(() => new Map(SOURCE_FILES), [])
 
@@ -209,13 +213,15 @@ function App() {
   }
 
   const raiseWindow = (id: WindowId) => {
-    setActiveWindow(id)
     setZOrder((current) => ({ ...current, [id]: Math.max(...Object.values(current)) + 1 }))
   }
 
   const selectWindow = (id: WindowId) => {
+    if (floating[id]) {
+      raiseWindow(id)
+      return
+    }
     setActiveWindow(id)
-    if (floating[id]) raiseWindow(id)
   }
 
   const toggleFloating = (id: WindowId) => {
@@ -238,12 +244,19 @@ function App() {
 
   const toggleSourceFloating = (id: string) => {
     setSourceTabs((tabs) => tabs.map((tab) => tab.id === id ? { ...tab, floating: !tab.floating, zIndex: Math.max(...tabs.map((item) => item.zIndex)) + 1 } : tab))
-    setActiveWindow(id)
   }
 
   const raiseSource = (id: string) => {
-    setActiveWindow(id)
     setSourceTabs((tabs) => tabs.map((tab) => tab.id === id ? { ...tab, zIndex: Math.max(...tabs.map((item) => item.zIndex)) + 1 } : tab))
+  }
+
+  const selectSource = (id: string) => {
+    const tab = sourceTabs.find((item) => item.id === id)
+    if (tab?.floating) {
+      raiseSource(id)
+      return
+    }
+    setActiveWindow(id)
   }
 
   const closeSource = (id: string) => {
@@ -259,11 +272,19 @@ function App() {
     setMenu(null)
   }
 
+  const setColumnSplit = (position: number, stacked = false) => setPanelSplit((current) => stacked ? { ...current, stacked: Math.min(Math.max(position, 0.38), 0.72) } : { ...current, column: Math.min(Math.max(position, 0.38), 0.72) })
+  const setRowSplit = (position: number) => setPanelSplit((current) => ({ ...current, row: Math.min(Math.max(position, 0.32), 0.78) }))
+  const cameraLayoutStyle = {
+    '--camera-column': `${panelSplit.column * 100}%`,
+    '--camera-row': `${panelSplit.row * 100}%`,
+    '--camera-stacked': `${panelSplit.stacked * 100}%`,
+  } as CSSProperties
+
   const isWorking = status === 'loading' || status === 'requesting'
   const activeLabel = snapshot.gesture === 'idle' ? 'none' : REACTION_BY_ID[snapshot.gesture].label
 
   const cameraContent = (
-    <div className="camera-workspace">
+    <div className="camera-workspace" style={cameraLayoutStyle}>
       <div className="camera-column">
         <section className="camera-pane" aria-labelledby="camera-pane-title">
           <header className="pane-titlebar"><span id="camera-pane-title">camera feed</span><span>{videoSize.width ? `${videoSize.width}x${videoSize.height}` : 'no input'}</span></header>
@@ -275,8 +296,10 @@ function App() {
           </div>
           <div className="camera-toolbar"><span>{statusMessage}</span>{status === 'running' && <button type="button" onClick={stopCamera}>Stop camera</button>}<button type="button" onClick={() => setMenu('camera')}>Camera menu</button></div>
         </section>
+        <PanelResizeHandle direction="horizontal" label="Resize camera and reaction panels" onResize={setRowSplit} />
         <ReactionPane gesture={snapshot.gesture} confidence={snapshot.confidence} media={reactionMedia} />
       </div>
+      <PanelResizeHandle direction="vertical" label="Resize camera and runtime panels" onResize={setColumnSplit} />
       <RuntimePanel snapshot={snapshot} events={events} />
     </div>
   )
@@ -294,7 +317,7 @@ function App() {
       <div className="tab-bar" role="tablist" aria-label="Open windows">
         <button type="button" role="tab" aria-selected={activeWindow === 'camera'} onClick={() => selectWindow('camera')}>camera.ts{floating.camera ? ' [float]' : ''}</button>
         <button type="button" role="tab" aria-selected={activeWindow === 'signals'} onClick={() => selectWindow('signals')}>signals.watch{floating.signals ? ' [float]' : ''}</button>
-        {sourceTabs.map((tab) => <button type="button" role="tab" aria-selected={activeWindow === tab.id} key={tab.id} onClick={() => raiseSource(tab.id)}>{tab.fileName}{tab.floating ? ' [float]' : ''}</button>)}
+        {sourceTabs.map((tab) => <button type="button" role="tab" aria-selected={activeWindow === tab.id} key={tab.id} onClick={() => selectSource(tab.id)}>{tab.fileName}{tab.floating ? ' [float]' : ''}</button>)}
         {activeWindow === 'help' && <button type="button" role="tab" aria-selected onClick={() => selectWindow('help')}>about-kitty-mesh.txt</button>}
       </div>
 
@@ -326,7 +349,7 @@ function App() {
         <div className="desktop">
           <p className="desktop__hint">Use ↗ to float, drag title bars to move, and resize from the lower-right corner.</p>
           <DesktopWindow id="camera-window" title="camera.ts" floating={floating.camera} visible={floating.camera || activeWindow === 'camera'} zIndex={zOrder.camera} initialPosition={{ x: 205, y: 110, width: 780, height: 650 }} onActivate={() => raiseWindow('camera')} onToggleFloating={() => toggleFloating('camera')}>{cameraContent}</DesktopWindow>
-          <DesktopWindow id="signals-window" title="signals.watch" floating={floating.signals} visible={floating.signals || activeWindow === 'signals'} zIndex={zOrder.signals} initialPosition={{ x: 470, y: 155, width: 560, height: 460 }} onActivate={() => raiseWindow('signals')} onToggleFloating={() => toggleFloating('signals')}><GestureRail active={snapshot.gesture} candidate={snapshot.candidate} scores={snapshot.scores} spinStage={snapshot.spinStage} spinProgress={snapshot.spinProgress} hands={snapshot.hands} /></DesktopWindow>
+          <DesktopWindow id="signals-window" title="signals.watch" floating={floating.signals} visible={floating.signals || activeWindow === 'signals'} zIndex={zOrder.signals} initialPosition={{ x: 470, y: 155, width: 560, height: 460 }} onActivate={() => raiseWindow('signals')} onToggleFloating={() => toggleFloating('signals')}><GestureRail active={snapshot.gesture} candidate={snapshot.candidate} scores={snapshot.scores} hands={snapshot.hands} /></DesktopWindow>
           {sourceTabs.map((tab, index) => <DesktopWindow id={tab.id} title={tab.fileName} floating={tab.floating} visible={tab.floating || activeWindow === tab.id} zIndex={tab.zIndex} initialPosition={{ x: 420 + index * 24, y: 150 + index * 24, width: 760, height: 620 }} onActivate={() => raiseSource(tab.id)} onToggleFloating={() => toggleSourceFloating(tab.id)} key={tab.id}><SourceViewer fileName={tab.fileName} source={sourceByName.get(tab.fileName) ?? ''} onClose={() => closeSource(tab.id)} /></DesktopWindow>)}
           <DesktopWindow id="help-window" title="about-kitty-mesh.txt" floating={floating.help} visible={floating.help || activeWindow === 'help'} zIndex={zOrder.help} initialPosition={{ x: 520, y: 210, width: 500, height: 360 }} onActivate={() => raiseWindow('help')} onToggleFloating={() => toggleFloating('help')}><HelpPane onClose={() => selectWindow('camera')} /></DesktopWindow>
         </div>

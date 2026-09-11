@@ -1,5 +1,19 @@
 # Changelog
 
+## 0.5.1 · 2026-09-11
+
+### Added
+
+- Added docked splitters for camera feed, reaction.ts, and the gesture-engine runtime panel. They support pointer drag and keyboard arrow keys.
+- Installed the supplied reaction images and MP3 files in `public/reactions`, with a manifest including the `tounge.*` to `tongue` mapping.
+
+### Changed
+
+- Removed C-hand and full-360 spin from the detector, signal scores, runtime trace, reaction registry, and tests.
+- Kept the reaction media area at a fixed 260 × 180 slot, so images cannot resize or shift the pane.
+- Made floating windows raise above the workspace without changing the selected docked tab.
+- Made the camera layout stack vertically at narrower widths, while retaining adjustable splitters.
+
 ## 0.5.0 · 2026-09-10
 
 ### Added

@@ -29,9 +29,8 @@ export function DesktopWindow({
   const resize = useRef({ pointerId: 0, startX: 0, startY: 0, width: initialPosition.width, height: initialPosition.height })
 
   const startDrag = (event: PointerEvent<HTMLElement>) => {
-    onActivate()
+    if (floating) onActivate()
     if (!floating || (event.target as HTMLElement).closest('button')) return
-    onActivate()
     drag.current = { pointerId: event.pointerId, offsetX: event.clientX - position.x, offsetY: event.clientY - position.y }
     event.currentTarget.setPointerCapture(event.pointerId)
   }
@@ -50,13 +49,14 @@ export function DesktopWindow({
   }
 
   const startResize = (event: PointerEvent<HTMLSpanElement>) => {
-    onActivate()
+    if (floating) onActivate()
     const parent = event.currentTarget.parentElement
     if (!parent) return
     const bounds = parent.getBoundingClientRect()
     resize.current = { pointerId: event.pointerId, startX: event.clientX, startY: event.clientY, width: bounds.width, height: bounds.height }
     event.currentTarget.setPointerCapture(event.pointerId)
     event.preventDefault()
+    event.stopPropagation()
   }
 
   const moveResize = (event: PointerEvent<HTMLSpanElement>) => {
@@ -86,7 +86,7 @@ export function DesktopWindow({
       role="tabpanel"
       className={`desktop-window${floating ? ' desktop-window--floating' : ' desktop-window--docked'}`}
       hidden={!visible}
-      onPointerDown={onActivate}
+      onPointerDown={floating ? onActivate : undefined}
       style={style}
     >
       <header className="desktop-window__titlebar" onPointerDown={startDrag} onPointerMove={moveWindow} onPointerUp={stopDrag} onPointerCancel={stopDrag}>

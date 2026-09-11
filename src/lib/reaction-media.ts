@@ -13,8 +13,8 @@ let cachedManifest: ReactionMediaMap | null = null
 
 function defaultMedia(): ReactionMediaMap {
   const ids: Exclude<GestureId, 'idle'>[] = [
-    'blank', 'profile', 'tongue', 'happy', 'kiss', 'spin', 'angry', 'hands',
-    'open-palm', 'fist', 'point', 'peace', 'c-hand', 'thumbs-up',
+    'blank', 'profile', 'tongue', 'happy', 'kiss', 'angry', 'hands',
+    'open-palm', 'fist', 'point', 'peace', 'thumbs-up',
   ]
   return Object.fromEntries(ids.map((id) => [id, { image: null, audio: null }])) as ReactionMediaMap
 }

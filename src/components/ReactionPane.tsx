@@ -17,16 +17,12 @@ export function ReactionPane({ gesture, confidence, media }: ReactionPaneProps) 
     <section className="reaction-pane" aria-label="Reaction preview">
       <header className="pane-titlebar"><span>reaction.ts</span></header>
       <div className="reaction-pane__body">
-        {reaction ? (
-          <>
-            {imageUrl ? <img src={imageUrl} alt={`${reaction.label} reaction media`} /> : <pre aria-hidden="true">{`[ ${reaction.id.toUpperCase()} ]`}</pre>}
-            <h1>{reaction.label}</h1>
-            <p>{reaction.prompt}</p>
-            <dl><div><dt>confidence</dt><dd>{Math.round(confidence * 100)}%</dd></div><div><dt>image</dt><dd>{imageUrl ?? 'waiting for media'}</dd></div><div><dt>sound</dt><dd>{audioUrl ?? 'built-in tone'}</dd></div></dl>
-          </>
-        ) : (
-          <><pre aria-hidden="true">[ WAITING ]</pre><h1>No reaction yet</h1><p>Kitty Mesh will show the next detected state here.</p></>
-        )}
+        <div className="reaction-media-slot">
+          {imageUrl ? <img src={imageUrl} alt={`${reaction!.label} reaction media`} /> : <pre aria-hidden="true">{reaction ? `[ ${reaction.id.toUpperCase()} ]` : '[ WAITING ]'}</pre>}
+        </div>
+        <h1>{reaction?.label ?? 'No reaction yet'}</h1>
+        <p>{reaction?.prompt ?? 'Kitty Mesh will show the next detected state here.'}</p>
+        {reaction && <dl><div><dt>confidence</dt><dd>{Math.round(confidence * 100)}%</dd></div><div><dt>image</dt><dd>{imageUrl ?? 'waiting for media'}</dd></div><div><dt>sound</dt><dd>{audioUrl ?? 'built-in tone'}</dd></div></dl>}
       </div>
     </section>
   )

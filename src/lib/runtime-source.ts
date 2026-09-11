@@ -36,7 +36,6 @@ export const RUNTIME_MODULES: RuntimeModule[] = [
     { step: 'reaction.dispatch', includes: "this.emit('reaction.dispatch', 'Dispatch reaction'" },
   ]),
   mapSource('classifier', 'src/lib/gesture-engine.ts', gestureEngineSource, [
-    { step: 'spin.update', includes: 'const spin = this.spinTracker.update' },
     { step: 'gesture.rank', includes: 'const winner = ranked.find' },
     { step: 'gesture.stabilize', includes: 'const stable = this.stabilizer.push' },
   ]),

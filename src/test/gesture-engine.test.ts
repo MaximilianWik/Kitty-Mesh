@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { GestureStabilizer, SpinTracker, analyzeHands, extractSignals } from '../lib/gesture-engine'
+import { GestureStabilizer, analyzeHands, extractSignals } from '../lib/gesture-engine'
 import type { LandmarkPoint } from '../lib/types'
 
 const point = (x: number, y: number, visibility = 1): LandmarkPoint => ({ x, y, z: 0, visibility })
@@ -42,18 +42,6 @@ describe('analyzeHands', () => {
     expect(result.observations[0].gesture).toBe('open-palm')
     expect(Object.values(result.observations[0].fingers).every(Boolean)).toBe(true)
     expect(result.scores['open-palm']).toBeGreaterThan(0.9)
-  })
-})
-
-describe('SpinTracker', () => {
-  it('completes a staged side-away-opposite-front turn', () => {
-    const tracker = new SpinTracker()
-
-    expect(tracker.update(0.8, true, true, 0).stage).toBe('first-side')
-    tracker.update(0, false, true, 100)
-    expect(tracker.update(0, false, true, 350).stage).toBe('away')
-    expect(tracker.update(-0.75, true, true, 600).stage).toBe('opposite-side')
-    expect(tracker.update(0.1, true, true, 850).complete).toBe(true)
   })
 })
 

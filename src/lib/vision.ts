@@ -165,7 +165,6 @@ export class VisionRuntime {
     this.emit('signals.extract', 'Extract landmarks and blendshapes', `${face?.length ?? 0} face / ${hands.length} hand`)
     const signals = extractSignals(faceResult.faceBlendshapes[0], face, pose, hands, handedness)
 
-    this.emit('spin.update', 'Advance rotation sequence', `${this.lastSnapshot.spinStage}`)
     const classified = this.engine.update(signals, now)
     this.counters.classifications += 1
     this.emit('gesture.rank', 'Rank gesture scores', classified.candidate)
@@ -183,8 +182,6 @@ export class VisionRuntime {
       candidate: classified.candidate,
       confidence: classified.confidence,
       scores: classified.scores,
-      spinStage: classified.spinStage,
-      spinProgress: classified.spinProgress,
       faceTracked: signals.faceTracked,
       poseTracked: signals.poseTracked,
       handTracked: signals.handTracked,

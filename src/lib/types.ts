@@ -6,14 +6,13 @@ export type FacePoseId =
   | 'kiss'
   | 'angry'
 
-export type BodyPoseId = 'spin' | 'hands'
+export type BodyPoseId = 'hands'
 
 export type HandGestureId =
   | 'open-palm'
   | 'fist'
   | 'point'
   | 'peace'
-  | 'c-hand'
   | 'thumbs-up'
 
 export type GestureId = 'idle' | FacePoseId | BodyPoseId | HandGestureId
@@ -34,8 +33,6 @@ export type TrackingStatus =
   | 'running'
   | 'error'
 
-export type SpinStage = 'ready' | 'first-side' | 'away' | 'opposite-side' | 'complete'
-
 export interface GestureScores {
   blank: number
   profile: number
@@ -44,12 +41,10 @@ export interface GestureScores {
   kiss: number
   angry: number
   hands: number
-  spin: number
   'open-palm': number
   fist: number
   point: number
   peace: number
-  'c-hand': number
   'thumbs-up': number
 }
 
@@ -58,8 +53,6 @@ export interface VisionSnapshot {
   candidate: GestureId
   confidence: number
   scores: GestureScores
-  spinStage: SpinStage
-  spinProgress: number
   faceTracked: boolean
   poseTracked: boolean
   handTracked: boolean
@@ -86,7 +79,6 @@ export type RuntimeStepId =
   | 'pose.detect'
   | 'hand.detect'
   | 'signals.extract'
-  | 'spin.update'
   | 'gesture.rank'
   | 'gesture.stabilize'
   | 'reaction.dispatch'
@@ -120,12 +112,10 @@ export const EMPTY_SCORES: GestureScores = {
   kiss: 0,
   angry: 0,
   hands: 0,
-  spin: 0,
   'open-palm': 0,
   fist: 0,
   point: 0,
   peace: 0,
-  'c-hand': 0,
   'thumbs-up': 0,
 }
 
@@ -134,8 +124,6 @@ export const INITIAL_SNAPSHOT: VisionSnapshot = {
   candidate: 'idle',
   confidence: 0,
   scores: EMPTY_SCORES,
-  spinStage: 'ready',
-  spinProgress: 0,
   faceTracked: false,
   poseTracked: false,
   handTracked: false,

@@ -7,7 +7,6 @@ import type {
   HandObservation,
   LandmarkPoint,
   RuntimeStepId,
-  SpinStage,
 } from './types'
 
 const clamp = (value: number, min = 0, max = 1) => Math.min(max, Math.max(min, value))
@@ -22,9 +21,7 @@ export interface ExtractedSignals {
   poseTracked: boolean
   handTracked: boolean
   hands: HandObservation[]
-  yaw: number
-  shouldersVisible: boolean
-  scores: Omit<GestureScores, 'spin'>
+  scores: GestureScores
 }
 
 const FINGER_POINTS: Record<Exclude<FingerId, 'thumb'>, [number, number, number]> = {
@@ -51,7 +48,6 @@ export function analyzeHands(
     fist: 0,
     point: 0,
     peace: 0,
-    'c-hand': 0,
     'thumbs-up': 0,
   }
 
@@ -100,24 +96,9 @@ export function analyzeHands(
       confidence = 0.93
     }
 
-    const label = handedness[handIndex]
-    const isLeftHand = label === 'Left'
-    const palmScale = Math.max(distance(points[0], points[9]), 0.001)
-    const thumbIndexGap = distance(points[4], points[8]) / palmScale
-    const curvedFingers = [
-      jointAngle(points[5], points[6], points[8]),
-      jointAngle(points[9], points[10], points[12]),
-      jointAngle(points[13], points[14], points[16]),
-      jointAngle(points[17], points[18], points[20]),
-    ].filter((angle) => angle > 75 && angle < 145).length
-
-    if (isLeftHand && gesture === 'unclassified' && thumbIndexGap > 1.05 && thumbIndexGap < 2.4 && curvedFingers >= 2) {
-      gesture = 'c-hand'
-      confidence = Math.min(0.94, 0.62 + curvedFingers * 0.08)
-    }
-
     if (gesture !== 'unclassified') scores[gesture] = Math.max(scores[gesture], confidence)
 
+    const label = handedness[handIndex]
     return [{
       handedness: label === 'Left' || label === 'Right' ? label : 'Unknown',
       gesture,
@@ -221,8 +202,6 @@ export function extractSignals(
     poseTracked,
     handTracked: handAnalysis.observations.length > 0,
     hands: handAnalysis.observations,
-    yaw,
-    shouldersVisible,
     scores: {
       blank,
       profile,
@@ -233,64 +212,6 @@ export function extractSignals(
       hands,
       ...handAnalysis.scores,
     },
-  }
-}
-
-interface SpinResult {
-  stage: SpinStage
-  progress: number
-  complete: boolean
-}
-
-export class SpinTracker {
-  private stage: SpinStage = 'ready'
-  private direction = 0
-  private startedAt = 0
-  private faceMissingSince = 0
-  private completedAt = 0
-
-  update(yaw: number, faceTracked: boolean, poseTracked: boolean, now: number): SpinResult {
-    if (this.stage !== 'ready' && this.stage !== 'complete' && now - this.startedAt > 12_000) this.reset()
-
-    if (this.stage === 'complete') {
-      if (now - this.completedAt > 1_600) this.reset()
-      return { stage: this.stage, progress: 1, complete: true }
-    }
-
-    if (this.stage === 'ready' && faceTracked && Math.abs(yaw) > 0.7) {
-      this.stage = 'first-side'
-      this.direction = Math.sign(yaw) || 1
-      this.startedAt = now
-    } else if (this.stage === 'first-side') {
-      if (!faceTracked && poseTracked) {
-        this.faceMissingSince ||= now
-        if (now - this.faceMissingSince > 180) this.stage = 'away'
-      } else {
-        this.faceMissingSince = 0
-      }
-    } else if (this.stage === 'away' && faceTracked && Math.sign(yaw) === -this.direction && Math.abs(yaw) > 0.55) {
-      this.stage = 'opposite-side'
-    } else if (this.stage === 'opposite-side' && faceTracked && Math.abs(yaw) < 0.28) {
-      this.stage = 'complete'
-      this.completedAt = now
-    }
-
-    const progressByStage: Record<SpinStage, number> = {
-      ready: 0,
-      'first-side': 0.25,
-      away: 0.56,
-      'opposite-side': 0.82,
-      complete: 1,
-    }
-    return { stage: this.stage, progress: progressByStage[this.stage], complete: this.stage === 'complete' }
-  }
-
-  reset() {
-    this.stage = 'ready'
-    this.direction = 0
-    this.startedAt = 0
-    this.faceMissingSince = 0
-    this.completedAt = 0
   }
 }
 
@@ -311,7 +232,7 @@ export class GestureStabilizer {
       this.candidateSince = now
     }
 
-    const requiredHold = candidate === 'blank' ? 420 : candidate === 'spin' ? 100 : 120
+    const requiredHold = candidate === 'blank' ? 420 : 120
     const leavingHold = candidate === 'idle' ? 150 : requiredHold
     const canChange = now - this.lastChangeAt > 160
 
@@ -331,7 +252,6 @@ export class GestureStabilizer {
 }
 
 export class GestureEngine {
-  private spinTracker = new SpinTracker()
   private stabilizer = new GestureStabilizer()
   private smoothed: GestureScores = {
     blank: 0,
@@ -341,28 +261,21 @@ export class GestureEngine {
     kiss: 0,
     angry: 0,
     hands: 0,
-    spin: 0,
     'open-palm': 0,
     fist: 0,
     point: 0,
     peace: 0,
-    'c-hand': 0,
     'thumbs-up': 0,
   }
 
   update(signals: ExtractedSignals, now: number) {
-    const spin = this.spinTracker.update(signals.yaw, signals.faceTracked, signals.poseTracked, now)
-    const incoming: GestureScores = { ...signals.scores, spin: spin.complete ? 1 : spin.progress * 0.42 }
-
-    for (const key of Object.keys(incoming) as Array<keyof GestureScores>) {
-      this.smoothed[key] = this.smoothed[key] * 0.52 + incoming[key] * 0.48
+    for (const key of Object.keys(signals.scores) as Array<keyof GestureScores>) {
+      this.smoothed[key] = this.smoothed[key] * 0.52 + signals.scores[key] * 0.48
     }
 
     const ranked: Array<[GestureId, number, number]> = [
-      ['spin', spin.complete ? 1 : 0, 0.9],
       ['hands', this.smoothed.hands, 0.52],
       ['peace', this.smoothed.peace, 0.62],
-      ['c-hand', this.smoothed['c-hand'], 0.58],
       ['thumbs-up', this.smoothed['thumbs-up'], 0.62],
       ['point', this.smoothed.point, 0.62],
       ['fist', this.smoothed.fist, 0.62],
@@ -384,8 +297,6 @@ export class GestureEngine {
       candidate,
       confidence,
       scores: { ...this.smoothed },
-      spinStage: spin.stage,
-      spinProgress: spin.progress,
       activeStep: (stable.changed ? 'reaction.dispatch' : 'gesture.stabilize') as RuntimeStepId,
     }
   }
