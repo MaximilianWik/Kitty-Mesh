@@ -28,21 +28,22 @@ export function DesktopWindow({
   const drag = useRef({ pointerId: 0, offsetX: 0, offsetY: 0 })
   const resize = useRef({ pointerId: 0, startX: 0, startY: 0, width: initialPosition.width, height: initialPosition.height })
 
-  const startDrag = (event: PointerEvent<HTMLDivElement>) => {
+  const startDrag = (event: PointerEvent<HTMLElement>) => {
+    onActivate()
     if (!floating || (event.target as HTMLElement).closest('button')) return
     onActivate()
     drag.current = { pointerId: event.pointerId, offsetX: event.clientX - position.x, offsetY: event.clientY - position.y }
     event.currentTarget.setPointerCapture(event.pointerId)
   }
 
-  const moveWindow = (event: PointerEvent<HTMLDivElement>) => {
+  const moveWindow = (event: PointerEvent<HTMLElement>) => {
     if (!floating || drag.current.pointerId !== event.pointerId) return
     const nextX = Math.min(Math.max(event.clientX - drag.current.offsetX, 0), window.innerWidth - 180)
     const nextY = Math.min(Math.max(event.clientY - drag.current.offsetY, 0), window.innerHeight - 60)
     setPosition({ x: nextX, y: nextY })
   }
 
-  const stopDrag = (event: PointerEvent<HTMLDivElement>) => {
+  const stopDrag = (event: PointerEvent<HTMLElement>) => {
     if (drag.current.pointerId !== event.pointerId) return
     drag.current.pointerId = 0
     event.currentTarget.releasePointerCapture(event.pointerId)
