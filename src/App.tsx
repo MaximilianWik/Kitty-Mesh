@@ -71,7 +71,7 @@ function App() {
   const menuRef = useRef<HTMLDivElement>(null)
   const sourceCounter = useRef(0)
   const [activeWindow, setActiveWindow] = useState<string>('camera')
-  const [floating, setFloating] = useState<Record<WindowId, boolean>>({ camera: false, signals: true, help: false })
+  const [floating, setFloating] = useState<Record<WindowId, boolean>>({ camera: false, signals: false, help: false })
   const [zOrder, setZOrder] = useState<Record<WindowId, number>>({ camera: 20, signals: 21, help: 22 })
   const [sourceTabs, setSourceTabs] = useState<SourceTab[]>([])
   const [menu, setMenu] = useState<MenuId>(null)
@@ -252,7 +252,7 @@ function App() {
   }
 
   const resetWindows = () => {
-    setFloating({ camera: false, signals: true, help: false })
+    setFloating({ camera: false, signals: false, help: false })
     setSourceTabs((tabs) => tabs.map((tab, index) => ({ ...tab, floating: false, zIndex: 30 + index })))
     setActiveWindow('camera')
     setZOrder({ camera: 20, signals: 21, help: 22 })
