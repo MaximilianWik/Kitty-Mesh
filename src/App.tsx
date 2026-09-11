@@ -6,7 +6,7 @@ import { HelpPane, SourceViewer } from './components/SourceViewer'
 import { LandmarkLayer } from './components/LandmarkLayer'
 import { ReactionPane } from './components/ReactionPane'
 import { RuntimePanel } from './components/RuntimePanel'
-import { playReactionTone, unlockAudio } from './lib/audio'
+import { playReactionAudio, playReactionTone, unlockAudio } from './lib/audio'
 import { loadReactionMedia, mediaUrl, type ReactionMediaMap } from './lib/reaction-media'
 import { REACTION_BY_ID } from './lib/reactions'
 import type { FrameLandmarks, GestureId, RuntimeEvent, TrackingStatus, VisionSnapshot } from './lib/types'
@@ -83,13 +83,13 @@ function App() {
   const [snapshot, setSnapshot] = useState<VisionSnapshot>(INITIAL_SNAPSHOT)
   const [landmarks, setLandmarks] = useState<FrameLandmarks>(EMPTY_LANDMARKS)
   const [events, setEvents] = useState<RuntimeEvent[]>([])
-  const [audioEnabled, setAudioEnabled] = useState(false)
+  const [audioEnabled, setAudioEnabled] = useState(true)
   const [reactionMedia, setReactionMedia] = useState<ReactionMediaMap | null>(null)
   const [showMesh, setShowMesh] = useState(true)
   const [videoSize, setVideoSize] = useState({ width: 0, height: 0 })
   const [devices, setDevices] = useState<MediaDeviceInfo[]>([])
   const [selectedDeviceId, setSelectedDeviceId] = useState('')
-  const [panelSplit, setPanelSplit] = useState({ column: 0.62, row: 0.6, stacked: 0.5 })
+  const [panelSplit, setPanelSplit] = useState({ column: 0.56, row: 0.58, stacked: 0.5 })
 
   const sourceByName = useMemo(() => new Map(SOURCE_FILES), [])
 
@@ -139,8 +139,7 @@ function App() {
     const reaction = REACTION_BY_ID[snapshot.gesture]
     const audioUrl = mediaUrl(reactionMedia?.[snapshot.gesture]?.audio ?? null)
     if (audioUrl) {
-      const player = new Audio(audioUrl)
-      void player.play().catch(() => undefined)
+      void playReactionAudio(audioUrl).catch(() => undefined)
     } else {
       playReactionTone(reaction.tone)
     }
@@ -155,6 +154,7 @@ function App() {
       return
     }
     startingRef.current = true
+    await unlockAudio()
     setStatus('loading')
     setStatusMessage('Loading tracking models, /ᐠ - ˕ -マ')
     try {
@@ -273,7 +273,7 @@ function App() {
   }
 
   const setColumnSplit = (position: number, stacked = false) => setPanelSplit((current) => stacked ? { ...current, stacked: Math.min(Math.max(position, 0.38), 0.72) } : { ...current, column: Math.min(Math.max(position, 0.38), 0.72) })
-  const setRowSplit = (position: number) => setPanelSplit((current) => ({ ...current, row: Math.min(Math.max(position, 0.32), 0.78) }))
+  const setRowSplit = (position: number) => setPanelSplit((current) => ({ ...current, row: Math.min(Math.max(position, 0.3), 0.76) }))
   const cameraLayoutStyle = {
     '--camera-column': `${panelSplit.column * 100}%`,
     '--camera-row': `${panelSplit.row * 100}%`,
@@ -285,21 +285,19 @@ function App() {
 
   const cameraContent = (
     <div className="camera-workspace" style={cameraLayoutStyle}>
-      <div className="camera-column">
-        <section className="camera-pane" aria-labelledby="camera-pane-title">
-          <header className="pane-titlebar"><span id="camera-pane-title">camera feed</span><span>{videoSize.width ? `${videoSize.width}x${videoSize.height}` : 'no input'}</span></header>
-          <div className="camera-viewport">
-            <video ref={videoRef} className="camera-video" playsInline muted onLoadedMetadata={(event) => setVideoSize({ width: event.currentTarget.videoWidth, height: event.currentTarget.videoHeight })} />
-            {showMesh && <LandmarkLayer landmarks={landmarks} hands={snapshot.hands} {...videoSize} />}
-            {status !== 'running' && <div className="camera-dialog"><pre aria-hidden="true">{`CAMERA DEVICE\n-------------\nstatus: ${status}`}</pre><p>{statusMessage}</p><button type="button" onClick={() => startCamera()} disabled={isWorking}>{isWorking ? 'Starting...' : status === 'error' ? 'Retry camera' : 'Start camera'}</button></div>}
-            {status === 'running' && <div className="camera-readout"><span>match: {activeLabel}</span><span>face: {snapshot.faceTracked ? 'yes' : 'no'}</span><span>pose: {snapshot.poseTracked ? 'yes' : 'no'}</span><span>hands: {snapshot.hands.length}</span><span>confidence: {Math.round(snapshot.confidence * 100)}%</span></div>}
-          </div>
-          <div className="camera-toolbar"><span>{statusMessage}</span>{status === 'running' && <button type="button" onClick={stopCamera}>Stop camera</button>}<button type="button" onClick={() => setMenu('camera')}>Camera menu</button></div>
-        </section>
-        <PanelResizeHandle direction="horizontal" label="Resize camera and reaction panels" onResize={setRowSplit} />
-        <ReactionPane gesture={snapshot.gesture} confidence={snapshot.confidence} media={reactionMedia} />
-      </div>
-      <PanelResizeHandle direction="vertical" label="Resize camera and runtime panels" onResize={setColumnSplit} />
+      <section className="camera-pane" aria-labelledby="camera-pane-title">
+        <header className="pane-titlebar"><span id="camera-pane-title">camera feed</span><span>{videoSize.width ? `${videoSize.width}x${videoSize.height}` : 'no input'}</span></header>
+        <div className="camera-viewport">
+          <video ref={videoRef} className="camera-video" playsInline muted onLoadedMetadata={(event) => setVideoSize({ width: event.currentTarget.videoWidth, height: event.currentTarget.videoHeight })} />
+          {showMesh && <LandmarkLayer landmarks={landmarks} hands={snapshot.hands} {...videoSize} />}
+          {status !== 'running' && <div className="camera-dialog"><pre aria-hidden="true">{`CAMERA DEVICE\n-------------\nstatus: ${status}`}</pre><p>{statusMessage}</p><button type="button" onClick={() => startCamera()} disabled={isWorking}>{isWorking ? 'Starting...' : status === 'error' ? 'Retry camera' : 'Start camera'}</button></div>}
+          {status === 'running' && <div className="camera-readout"><span>match: {activeLabel}</span><span>face: {snapshot.faceTracked ? 'yes' : 'no'}</span><span>pose: {snapshot.poseTracked ? 'yes' : 'no'}</span><span>hands: {snapshot.hands.length}</span><span>confidence: {Math.round(snapshot.confidence * 100)}%</span></div>}
+        </div>
+        <div className="camera-toolbar"><span>{statusMessage}</span>{status === 'running' && <button type="button" onClick={stopCamera}>Stop camera</button>}<button type="button" onClick={() => setMenu('camera')}>Camera menu</button></div>
+      </section>
+      <PanelResizeHandle direction="vertical" label="Resize camera and reaction panels" onResize={setColumnSplit} />
+      <ReactionPane gesture={snapshot.gesture} confidence={snapshot.confidence} media={reactionMedia} />
+      <PanelResizeHandle direction="horizontal" label="Resize top feeds and gesture-engine panel" onResize={setRowSplit} />
       <RuntimePanel snapshot={snapshot} events={events} />
     </div>
   )

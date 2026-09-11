@@ -20,6 +20,7 @@ export const REACTIONS: ReactionDefinition[] = [
   { id: 'fist', label: 'Closed fist', prompt: 'Close all five fingers into a fist.', mediaBaseName: 'fist', tone: [131, 196] },
   { id: 'point', label: 'Point', prompt: 'Extend only your index finger.', mediaBaseName: 'point', tone: [294, 440] },
   { id: 'peace', label: 'Peace sign', prompt: 'Extend your index and middle fingers.', mediaBaseName: 'peace', tone: [349, 523] },
+  { id: 'rock', label: 'Rock sign', prompt: 'Extend your index and pinky, with middle and ring fingers folded.', mediaBaseName: 'rock', tone: [196, 294] },
   { id: 'thumbs-up', label: 'Thumbs up', prompt: 'Raise your thumb and fold the other fingers.', mediaBaseName: 'thumbs-up', tone: [392, 587] },
 ]
 

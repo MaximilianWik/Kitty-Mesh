@@ -20,6 +20,17 @@ function openHand(): LandmarkPoint[] {
   return hand
 }
 
+function rockHand(): LandmarkPoint[] {
+  const hand = Array.from({ length: 21 }, () => point(0.5, 0.5))
+  hand[0] = point(0.5, 0.85)
+  ;[[5, 6, 8, 0.38], [17, 18, 20, 0.62]].forEach(([mcp, pip, tip, x]) => {
+    hand[mcp] = point(x, 0.65)
+    hand[pip] = point(x, 0.48)
+    hand[tip] = point(x, 0.22)
+  })
+  return hand
+}
+
 describe('extractSignals', () => {
   it('detects both wrists above the shoulders', () => {
     const pose: LandmarkPoint[] = Array.from({ length: 33 }, () => point(0.5, 0.5, 0))
@@ -42,6 +53,13 @@ describe('analyzeHands', () => {
     expect(result.observations[0].gesture).toBe('open-palm')
     expect(Object.values(result.observations[0].fingers).every(Boolean)).toBe(true)
     expect(result.scores['open-palm']).toBeGreaterThan(0.9)
+  })
+
+  it('detects the rock sign with index and pinky extended', () => {
+    const result = analyzeHands([rockHand()], ['Right'])
+
+    expect(result.observations[0].gesture).toBe('rock')
+    expect(result.scores.rock).toBeGreaterThan(0.9)
   })
 })
 

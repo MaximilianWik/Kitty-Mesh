@@ -48,6 +48,7 @@ export function analyzeHands(
     fist: 0,
     point: 0,
     peace: 0,
+    rock: 0,
     'thumbs-up': 0,
   }
 
@@ -91,6 +92,9 @@ export function analyzeHands(
     } else if (fingers.index && fingers.middle && !fingers.ring && !fingers.pinky) {
       gesture = 'peace'
       confidence = fingers.thumb ? 0.76 : 0.94
+    } else if (fingers.index && fingers.pinky && !fingers.middle && !fingers.ring) {
+      gesture = 'rock'
+      confidence = fingers.thumb ? 0.84 : 0.94
     } else if (fingers.thumb && !fingers.index && !fingers.middle && !fingers.ring && !fingers.pinky && thumbTip.y < wrist.y) {
       gesture = 'thumbs-up'
       confidence = 0.93
@@ -265,6 +269,7 @@ export class GestureEngine {
     fist: 0,
     point: 0,
     peace: 0,
+    rock: 0,
     'thumbs-up': 0,
   }
 
@@ -276,6 +281,7 @@ export class GestureEngine {
     const ranked: Array<[GestureId, number, number]> = [
       ['hands', this.smoothed.hands, 0.52],
       ['peace', this.smoothed.peace, 0.62],
+      ['rock', this.smoothed.rock, 0.62],
       ['thumbs-up', this.smoothed['thumbs-up'], 0.62],
       ['point', this.smoothed.point, 0.62],
       ['fist', this.smoothed.fist, 0.62],

@@ -14,10 +14,10 @@ export function PanelResizeHandle({ direction, label, onResize }: PanelResizeHan
     if (!workspace) return
     const bounds = workspace.getBoundingClientRect()
     const stacked = window.matchMedia('(max-width: 980px)').matches
-    const verticalAxis = direction === 'vertical' && !stacked
-    const position = verticalAxis
-      ? (event.clientX - bounds.left) / bounds.width
-      : (event.clientY - bounds.top) / bounds.height
+    const horizontalAxis = direction === 'horizontal' || stacked
+    const position = horizontalAxis
+      ? (event.clientY - bounds.top) / bounds.height
+      : (event.clientX - bounds.left) / bounds.width
     onResize(position, stacked)
   }
 
@@ -48,10 +48,10 @@ export function PanelResizeHandle({ direction, label, onResize }: PanelResizeHan
     if (!workspace) return
     const bounds = workspace.getBoundingClientRect()
     const stacked = window.matchMedia('(max-width: 980px)').matches
-    const verticalAxis = direction === 'vertical' && !stacked
-    const position = verticalAxis
-      ? (event.currentTarget.getBoundingClientRect().left - bounds.left) / bounds.width
-      : (event.currentTarget.getBoundingClientRect().top - bounds.top) / bounds.height
+    const horizontalAxis = direction === 'horizontal' || stacked
+    const position = horizontalAxis
+      ? (event.currentTarget.getBoundingClientRect().top - bounds.top) / bounds.height
+      : (event.currentTarget.getBoundingClientRect().left - bounds.left) / bounds.width
     onResize(position + delta, stacked)
     event.preventDefault()
   }

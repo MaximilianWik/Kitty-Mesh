@@ -1,5 +1,17 @@
 # Changelog
 
+## 0.5.2 · 2026-09-11
+
+### Added
+
+- Added rock-sign detection (index and pinky extended), including the supplied `rock.png` and `rock.mp3` assets.
+
+### Changed
+
+- Rebuilt the docked camera workbench as camera feed top-left, reaction.ts top-right, and the gesture-engine runtime panel spanning the bottom row.
+- Changed the camera preview to `object-fit: contain`, so every captured pixel remains visible instead of being cropped.
+- Enabled and unlocked reaction audio from the Start camera action, then reuse one audio player for supplied MP3 reaction sounds.
+
 ## 0.5.1 · 2026-09-11
 
 ### Added

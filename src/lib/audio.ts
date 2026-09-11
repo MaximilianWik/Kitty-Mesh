@@ -1,13 +1,29 @@
 let audioContext: AudioContext | null = null
+let reactionPlayer: HTMLAudioElement | null = null
 
 function context() {
   audioContext ??= new AudioContext()
   return audioContext
 }
 
+function player() {
+  reactionPlayer ??= new Audio()
+  reactionPlayer.preload = 'auto'
+  return reactionPlayer
+}
+
 export async function unlockAudio() {
   const audio = context()
   if (audio.state === 'suspended') await audio.resume()
+  player()
+}
+
+export async function playReactionAudio(url: string) {
+  const audio = player()
+  audio.pause()
+  audio.currentTime = 0
+  audio.src = url
+  await audio.play()
 }
 
 export function playReactionTone(frequencies: [number, number]) {
