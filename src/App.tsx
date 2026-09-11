@@ -6,7 +6,7 @@ import { HelpPane, SourceViewer } from './components/SourceViewer'
 import { LandmarkLayer } from './components/LandmarkLayer'
 import { ReactionPane } from './components/ReactionPane'
 import { RuntimePanel } from './components/RuntimePanel'
-import { playReactionAudio, playReactionTone, unlockAudio } from './lib/audio'
+import { playReactionAudio, playReactionTone, stopReactionAudio, unlockAudio } from './lib/audio'
 import { loadReactionMedia, mediaUrl, type ReactionMediaMap } from './lib/reaction-media'
 import { REACTION_BY_ID } from './lib/reactions'
 import type { FrameLandmarks, GestureId, RuntimeEvent, TrackingStatus, VisionSnapshot } from './lib/types'
@@ -132,10 +132,13 @@ function App() {
   }, [])
 
   useEffect(() => {
-    if (!audioEnabled || snapshot.gesture === 'idle' || snapshot.gesture === previousGesture.current) {
+    if (!audioEnabled || snapshot.gesture === 'idle') {
+      stopReactionAudio()
       previousGesture.current = snapshot.gesture
       return
     }
+    if (snapshot.gesture === previousGesture.current) return
+
     const reaction = REACTION_BY_ID[snapshot.gesture]
     const audioUrl = mediaUrl(reactionMedia?.[snapshot.gesture]?.audio ?? null)
     if (audioUrl) {

@@ -26,6 +26,12 @@ export async function playReactionAudio(url: string) {
   await audio.play()
 }
 
+export function stopReactionAudio() {
+  if (!reactionPlayer) return
+  reactionPlayer.pause()
+  reactionPlayer.currentTime = 0
+}
+
 export function playReactionTone(frequencies: [number, number]) {
   const audio = context()
   const start = audio.currentTime

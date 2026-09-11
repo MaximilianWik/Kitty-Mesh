@@ -1,5 +1,12 @@
 # Changelog
 
+## 0.5.5 · 2026-09-11
+
+### Changed
+
+- Moved reaction media into an absolutely positioned, clipped layer and locked the app/docked-window overflow boundary. Reaction images now have no grid-layout contribution and cannot resize the page or any pane.
+- Stop the reusable mapped reaction MP3 immediately when the stable gesture returns to idle or sound is disabled.
+
 ## 0.5.4 · 2026-09-11
 
 ### Changed
