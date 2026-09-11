@@ -1,5 +1,5 @@
 import { useEffect, useRef } from 'react'
-import { FaceLandmarker, HandLandmarker, PoseLandmarker } from '@mediapipe/tasks-vision'
+import { HandLandmarker, PoseLandmarker } from '@mediapipe/tasks-vision'
 import type { FrameLandmarks, HandObservation } from '../lib/types'
 
 interface LandmarkLayerProps {
@@ -31,18 +31,6 @@ export function LandmarkLayer({ landmarks, hands, width, height, mirrored = true
 
     const x = (value: number) => (mirrored ? 1 - value : value) * width
     const y = (value: number) => value * height
-
-    context.strokeStyle = 'rgba(94, 221, 112, 0.85)'
-    context.lineWidth = 1.1
-    context.beginPath()
-    for (const connection of FaceLandmarker.FACE_LANDMARKS_CONTOURS) {
-      const from = landmarks.face[connection.start]
-      const to = landmarks.face[connection.end]
-      if (!from || !to) continue
-      context.moveTo(x(from.x), y(from.y))
-      context.lineTo(x(to.x), y(to.y))
-    }
-    context.stroke()
 
     context.strokeStyle = 'rgba(84, 217, 245, 0.8)'
     context.lineWidth = 2

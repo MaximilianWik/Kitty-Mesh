@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { DesktopWindow } from './components/DesktopWindow'
+import { GestureRail } from './components/GestureRail'
 import { HelpPane, SourceViewer } from './components/SourceViewer'
 import { LandmarkLayer } from './components/LandmarkLayer'
 import { ReactionPane } from './components/ReactionPane'
@@ -12,6 +13,7 @@ import { INITIAL_SNAPSHOT } from './lib/types'
 import { describeCameraError, stopMediaStream, VisionRuntime } from './lib/vision'
 import appSource from './App.tsx?raw'
 import desktopWindowSource from './components/DesktopWindow.tsx?raw'
+import gestureRailSource from './components/GestureRail.tsx?raw'
 import landmarkLayerSource from './components/LandmarkLayer.tsx?raw'
 import reactionPaneSource from './components/ReactionPane.tsx?raw'
 import runtimePanelSource from './components/RuntimePanel.tsx?raw'
@@ -28,7 +30,7 @@ import gestureEngineTestSource from './test/gesture-engine.test.ts?raw'
 import viteEnvSource from './vite-env.d.ts?raw'
 import stylesSource from './styles.css?raw'
 
-type WindowId = 'camera' | 'reaction' | 'help'
+type WindowId = 'camera' | 'signals' | 'help'
 type MenuId = 'file' | 'view' | 'camera' | 'help' | null
 
 interface SourceTab {
@@ -42,6 +44,7 @@ const EMPTY_LANDMARKS: FrameLandmarks = { face: [], pose: [], hands: [] }
 const SOURCE_FILES = [
   ['App.tsx', appSource],
   ['components/DesktopWindow.tsx', desktopWindowSource],
+  ['components/GestureRail.tsx', gestureRailSource],
   ['components/LandmarkLayer.tsx', landmarkLayerSource],
   ['components/ReactionPane.tsx', reactionPaneSource],
   ['components/RuntimePanel.tsx', runtimePanelSource],
@@ -68,8 +71,8 @@ function App() {
   const menuRef = useRef<HTMLDivElement>(null)
   const sourceCounter = useRef(0)
   const [activeWindow, setActiveWindow] = useState<string>('camera')
-  const [floating, setFloating] = useState<Record<WindowId, boolean>>({ camera: false, reaction: true, help: false })
-  const [zOrder, setZOrder] = useState<Record<WindowId, number>>({ camera: 20, reaction: 21, help: 22 })
+  const [floating, setFloating] = useState<Record<WindowId, boolean>>({ camera: false, signals: true, help: false })
+  const [zOrder, setZOrder] = useState<Record<WindowId, number>>({ camera: 20, signals: 21, help: 22 })
   const [sourceTabs, setSourceTabs] = useState<SourceTab[]>([])
   const [menu, setMenu] = useState<MenuId>(null)
   const [status, setStatus] = useState<TrackingStatus>('idle')
@@ -249,10 +252,10 @@ function App() {
   }
 
   const resetWindows = () => {
-    setFloating({ camera: false, reaction: true, help: false })
+    setFloating({ camera: false, signals: true, help: false })
     setSourceTabs((tabs) => tabs.map((tab, index) => ({ ...tab, floating: false, zIndex: 30 + index })))
     setActiveWindow('camera')
-    setZOrder({ camera: 20, reaction: 21, help: 22 })
+    setZOrder({ camera: 20, signals: 21, help: 22 })
     setMenu(null)
   }
 
@@ -271,7 +274,10 @@ function App() {
         </div>
         <div className="camera-toolbar"><span>{statusMessage}</span>{status === 'running' && <button type="button" onClick={stopCamera}>Stop camera</button>}<button type="button" onClick={() => setMenu('camera')}>Camera menu</button></div>
       </section>
-      <RuntimePanel snapshot={snapshot} events={events} />
+      <div className="camera-sidebar">
+        <RuntimePanel snapshot={snapshot} events={events} />
+        <ReactionPane gesture={snapshot.gesture} confidence={snapshot.confidence} media={reactionMedia} />
+      </div>
     </div>
   )
 
@@ -287,7 +293,7 @@ function App() {
 
       <div className="tab-bar" role="tablist" aria-label="Open windows">
         <button type="button" role="tab" aria-selected={activeWindow === 'camera'} onClick={() => selectWindow('camera')}>camera.ts{floating.camera ? ' [float]' : ''}</button>
-        <button type="button" role="tab" aria-selected={activeWindow === 'reaction'} onClick={() => selectWindow('reaction')}>reaction.ts{floating.reaction ? ' [float]' : ''}</button>
+        <button type="button" role="tab" aria-selected={activeWindow === 'signals'} onClick={() => selectWindow('signals')}>signals.watch{floating.signals ? ' [float]' : ''}</button>
         {sourceTabs.map((tab) => <button type="button" role="tab" aria-selected={activeWindow === tab.id} key={tab.id} onClick={() => raiseSource(tab.id)}>{tab.fileName}{tab.floating ? ' [float]' : ''}</button>)}
         {activeWindow === 'help' && <button type="button" role="tab" aria-selected onClick={() => selectWindow('help')}>about-kitty-mesh.txt</button>}
       </div>
@@ -320,7 +326,7 @@ function App() {
         <div className="desktop">
           <p className="desktop__hint">Use ↗ to float, drag title bars to move, and resize from the lower-right corner.</p>
           <DesktopWindow id="camera-window" title="camera.ts" floating={floating.camera} visible={floating.camera || activeWindow === 'camera'} zIndex={zOrder.camera} initialPosition={{ x: 205, y: 110, width: 780, height: 650 }} onActivate={() => raiseWindow('camera')} onToggleFloating={() => toggleFloating('camera')}>{cameraContent}</DesktopWindow>
-          <DesktopWindow id="reaction-window" title="reaction.ts" floating={floating.reaction} visible={floating.reaction || activeWindow === 'reaction'} zIndex={zOrder.reaction} initialPosition={{ x: 470, y: 155, width: 620, height: 720 }} onActivate={() => raiseWindow('reaction')} onToggleFloating={() => toggleFloating('reaction')}><ReactionPane gesture={snapshot.gesture} confidence={snapshot.confidence} media={reactionMedia} candidate={snapshot.candidate} scores={snapshot.scores} spinStage={snapshot.spinStage} spinProgress={snapshot.spinProgress} hands={snapshot.hands} onClose={() => selectWindow('camera')} /></DesktopWindow>
+          <DesktopWindow id="signals-window" title="signals.watch" floating={floating.signals} visible={floating.signals || activeWindow === 'signals'} zIndex={zOrder.signals} initialPosition={{ x: 470, y: 155, width: 560, height: 460 }} onActivate={() => raiseWindow('signals')} onToggleFloating={() => toggleFloating('signals')}><GestureRail active={snapshot.gesture} candidate={snapshot.candidate} scores={snapshot.scores} spinStage={snapshot.spinStage} spinProgress={snapshot.spinProgress} hands={snapshot.hands} /></DesktopWindow>
           {sourceTabs.map((tab, index) => <DesktopWindow id={tab.id} title={tab.fileName} floating={tab.floating} visible={tab.floating || activeWindow === tab.id} zIndex={tab.zIndex} initialPosition={{ x: 420 + index * 24, y: 150 + index * 24, width: 760, height: 620 }} onActivate={() => raiseSource(tab.id)} onToggleFloating={() => toggleSourceFloating(tab.id)} key={tab.id}><SourceViewer fileName={tab.fileName} source={sourceByName.get(tab.fileName) ?? ''} onClose={() => closeSource(tab.id)} /></DesktopWindow>)}
           <DesktopWindow id="help-window" title="about-kitty-mesh.txt" floating={floating.help} visible={floating.help || activeWindow === 'help'} zIndex={zOrder.help} initialPosition={{ x: 520, y: 210, width: 500, height: 360 }} onActivate={() => raiseWindow('help')} onToggleFloating={() => toggleFloating('help')}><HelpPane onClose={() => selectWindow('camera')} /></DesktopWindow>
         </div>
