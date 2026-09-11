@@ -16,7 +16,7 @@ Face runs every tick because expression state is the most latency-sensitive sign
 
 `extractSignals` (`src/lib/gesture-engine.ts`) turns raw landmarks and blendshapes into a `GestureScores` vector, one float per state, computed independently every frame:
 
-- **Face states** are weighted blendshape blends. Happy = 82% smile + 18% cheek squint, minus jaw-open leakage. Angry = 48% brow-down + 28% nose-sneer + 16% eye-squint + 8% mouth-press. Kiss = 64% pucker + 28% funnel + 8% shrug-lower, minus jaw-open. Tongue is an *approximation* built from jaw-open and mouth-lower/upper blendshapes, since Face Landmarker exposes no dedicated tongue landmark.
+- **Face states** are weighted blendshape blends. Happy = 82% smile + 18% cheek squint, minus jaw-open leakage. Angry = 48% brow-down + 28% nose-sneer + 16% eye-squint + 8% mouth-press. Kiss = 64% pucker + 28% funnel + 8% shrug-lower, minus jaw-open. Tongue is dominated by MediaPipe's own `tongueOut` blendshape (90% weight), with jaw-open and mouth-lower/upper as a minor assist for partial detections.
 - **Profile** comes from nose-to-eye-line yaw, normalized by inter-eye distance.
 - **Blank** is `1 − max(expressive activity) × 1.55 − profile × 0.45`, i.e. the least interesting frame wins.
 - **Hands up** needs both wrists above both shoulders by a visibility-gated margin, scored by how far above.
@@ -26,7 +26,7 @@ Every score is exponentially smoothed (`smoothed = smoothed × 0.52 + incoming �
 
 ## (=^･ω･^=) Ranking and the stabilizer
 
-`GestureEngine.update` walks a fixed priority list, from `hands` down to `blank`, and picks the first score that clears its own threshold (0.25 for tongue up to 0.62 for hand shapes — face states get lower bars, hand geometry gets stricter ones). The winning candidate then has to survive `GestureStabilizer`: a candidate must hold for ≥120ms (420ms for blank, so a resting face doesn't flicker) and the stabilizer enforces a 160ms cooldown between any two committed transitions. This is why the state you see never chatters even though scores are computed 30 times a second.
+`GestureEngine.update` walks a fixed priority list, from `hands` down to `blank`, and picks the first score that clears its own threshold (0.18 for tongue up to 0.62 for hand shapes — face states get lower bars, hand geometry gets stricter ones). The winning candidate then has to survive `GestureStabilizer`: a candidate must hold for ≥120ms (420ms for blank, so a resting face doesn't flicker) and the stabilizer enforces a 160ms cooldown between any two committed transitions. This is why the state you see never chatters even though scores are computed 30 times a second.
 
 ## ( ・ω・)✿ Thirteen states it hunts for
 
@@ -34,7 +34,7 @@ Every score is exponentially smoothed (`smoothed = smoothed × 0.52 + incoming �
 | --- | --- |
 | Blank stare | Lowest expressive activity, ≥30% |
 | Side profile | Nose crosses the inter-eye line, yaw-normalized |
-| Tongue out | Jaw-open + mouth blendshape approximation, ≥25% |
+| Tongue out | `tongueOut` blendshape, ≥18% |
 | Happy face | Smile blendshapes + cheek squint |
 | Kiss face | Mouth pucker + funnel blendshapes |
 | Angry face | Brow-down + nose-sneer + eye-squint + mouth-press |

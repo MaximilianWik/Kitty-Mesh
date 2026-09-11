@@ -1,5 +1,13 @@
 # Changelog
 
+## 0.5.6 · 2026-09-11
+
+### Changed
+
+- Made happy-face detection require a stronger smile (ranking threshold 0.38 → 0.46), since it was triggering too easily.
+- Rebuilt tongue-out detection around MediaPipe's own `tongueOut` blendshape (90% weight) instead of inferring it from jaw-open and mouth blendshapes. It now triggers reliably even when the jaw stays mostly closed, and its ranking threshold dropped from 0.25 to 0.18.
+- Replaced the tongue reaction audio file with a newly supplied cut.
+
 ## 0.5.5 · 2026-09-11
 
 ### Changed

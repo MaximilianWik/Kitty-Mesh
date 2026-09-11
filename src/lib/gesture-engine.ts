@@ -134,6 +134,7 @@ export function extractSignals(
   const profile = faceTracked ? clamp((Math.abs(yaw) - 0.32) / 0.48) : 0
 
   const jawOpen = scoreOf(blendshapes, 'jawOpen')
+  const tongueOut = scoreOf(blendshapes, 'tongueOut')
   const mouthLower = average(
     scoreOf(blendshapes, 'mouthLowerDownLeft'),
     scoreOf(blendshapes, 'mouthLowerDownRight'),
@@ -143,7 +144,7 @@ export function extractSignals(
     scoreOf(blendshapes, 'mouthUpperUpRight'),
   )
   const mouthClose = scoreOf(blendshapes, 'mouthClose')
-  const tongue = clamp(jawOpen * 0.78 + mouthLower * 0.24 + mouthUpper * 0.16 - mouthClose * 0.2)
+  const tongue = clamp(tongueOut * 0.9 + jawOpen * 0.15 + mouthLower * 0.1 + mouthUpper * 0.06 - mouthClose * 0.15)
 
   const smile = average(
     scoreOf(blendshapes, 'mouthSmileLeft'),
@@ -286,7 +287,7 @@ export class GestureEngine {
       ['point', this.smoothed.point, 0.62],
       ['fist', this.smoothed.fist, 0.62],
       ['open-palm', this.smoothed['open-palm'], 0.62],
-      ['tongue', this.smoothed.tongue, 0.25],
+      ['tongue', this.smoothed.tongue, 0.18],
       ['kiss', this.smoothed.kiss, 0.38],
       ['happy', this.smoothed.happy, 0.46],
       ['angry', this.smoothed.angry, 0.4],
