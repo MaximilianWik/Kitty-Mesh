@@ -333,7 +333,7 @@ export class GestureEngine {
       ['disgust', this.smoothed.disgust, 0.42],
       ['angry', this.smoothed.angry, 0.4],
       ['profile', this.smoothed.profile, 0.52],
-      ['blank', this.smoothed.blank, 0.3],
+      ['blank', this.smoothed.blank, 0.2],
     ]
     const winner = ranked.find(([, score, threshold]) => score >= threshold)
     const candidate = winner?.[0] ?? 'idle'
