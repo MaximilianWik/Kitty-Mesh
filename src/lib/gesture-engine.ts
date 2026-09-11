@@ -42,13 +42,16 @@ function jointAngle(a: LandmarkPoint, joint: LandmarkPoint, c: LandmarkPoint) {
 export function analyzeHands(
   handLandmarks: LandmarkPoint[][] = [],
   handedness: string[] = [],
-): { observations: HandObservation[]; scores: Pick<GestureScores, HandGestureId> } {
-  const scores: Pick<GestureScores, HandGestureId> = {
+): { observations: HandObservation[]; scores: Pick<GestureScores, HandGestureId | 'heart-hands'> } {
+  const scores: Pick<GestureScores, HandGestureId | 'heart-hands'> = {
     fist: 0,
     point: 0,
     peace: 0,
     rock: 0,
     'thumbs-up': 0,
+    ok: 0,
+    'call-me': 0,
+    'heart-hands': 0,
   }
 
   const observations = handLandmarks.flatMap((points, handIndex): HandObservation[] => {
@@ -78,6 +81,8 @@ export function analyzeHands(
     const extended = Object.values(fingers).filter(Boolean).length
     let gesture: HandObservation['gesture'] = 'unclassified'
     let confidence = 0.5
+    const handScale = distance(wrist, palmCenter)
+    const pinchDistance = distance(thumbTip, points[8])
 
     if (extended === 0) {
       gesture = 'fist'
@@ -91,6 +96,12 @@ export function analyzeHands(
     } else if (fingers.index && fingers.pinky && !fingers.middle && !fingers.ring) {
       gesture = 'rock'
       confidence = fingers.thumb ? 0.84 : 0.94
+    } else if (!fingers.index && fingers.middle && fingers.ring && fingers.pinky && handScale > 0 && pinchDistance < handScale * 0.55) {
+      gesture = 'ok'
+      confidence = 0.88
+    } else if (fingers.thumb && fingers.pinky && !fingers.index && !fingers.middle && !fingers.ring) {
+      gesture = 'call-me'
+      confidence = 0.87
     } else if (fingers.thumb && !fingers.index && !fingers.middle && !fingers.ring && !fingers.pinky && thumbTip.y < wrist.y) {
       gesture = 'thumbs-up'
       confidence = 0.93
@@ -106,6 +117,24 @@ export function analyzeHands(
       fingers,
     }]
   })
+
+  if (handLandmarks.length === 2 && handLandmarks[0].length >= 21 && handLandmarks[1].length >= 21) {
+    const [handA, handB] = handLandmarks
+    const midpoint = (a: LandmarkPoint, b: LandmarkPoint) => ({ x: (a.x + b.x) / 2, y: (a.y + b.y) / 2, z: (a.z + b.z) / 2 })
+    const tipsA = midpoint(handA[4], handA[8])
+    const tipsB = midpoint(handB[4], handB[8])
+    const scaleA = distance(handA[0], handA[9])
+    const scaleB = distance(handB[0], handB[9])
+    const scale = (scaleA + scaleB) / 2
+    if (scale > 0) {
+      const gap = distance(tipsA, tipsB)
+      const pinchA = distance(handA[4], handA[8])
+      const pinchB = distance(handB[4], handB[8])
+      const proximity = clamp(1 - gap / (scale * 1.3))
+      const pinchTightness = clamp(1 - Math.max(0, (pinchA + pinchB) / 2 - scale * 0.5) / (scale * 0.6))
+      scores['heart-hands'] = clamp(proximity * 0.7 + pinchTightness * 0.3)
+    }
+  }
 
   return { observations, scores }
 }
@@ -178,7 +207,11 @@ export function extractSignals(
     scoreOf(blendshapes, 'mouthPressLeft'),
     scoreOf(blendshapes, 'mouthPressRight'),
   )
-  const angry = clamp(browDown * 0.48 + noseSneer * 0.28 + squint * 0.16 + mouthPress * 0.08)
+  const angry = clamp(browDown * 0.55 + squint * 0.2 + mouthPress * 0.15 + noseSneer * 0.12)
+  const disgust = clamp(
+    noseSneer * 0.55 + mouthLower * 0.22 + mouthUpper * 0.08 + browDown * 0.1
+    - smile * 0.3 - jawOpen * 0.15,
+  )
 
   const expressiveActivity = Math.max(
     jawOpen,
@@ -215,6 +248,7 @@ export function extractSignals(
       happy,
       kiss,
       angry,
+      disgust,
       hands,
       ...handAnalysis.scores,
     },
@@ -266,12 +300,16 @@ export class GestureEngine {
     happy: 0,
     kiss: 0,
     angry: 0,
+    disgust: 0,
     hands: 0,
     fist: 0,
     point: 0,
     peace: 0,
     rock: 0,
     'thumbs-up': 0,
+    ok: 0,
+    'call-me': 0,
+    'heart-hands': 0,
   }
 
   update(signals: ExtractedSignals, now: number) {
@@ -281,14 +319,18 @@ export class GestureEngine {
 
     const ranked: Array<[GestureId, number, number]> = [
       ['hands', this.smoothed.hands, 0.52],
+      ['heart-hands', this.smoothed['heart-hands'], 0.58],
       ['peace', this.smoothed.peace, 0.62],
       ['rock', this.smoothed.rock, 0.62],
       ['thumbs-up', this.smoothed['thumbs-up'], 0.62],
       ['point', this.smoothed.point, 0.62],
       ['fist', this.smoothed.fist, 0.62],
+      ['ok', this.smoothed.ok, 0.62],
+      ['call-me', this.smoothed['call-me'], 0.62],
       ['tongue', this.smoothed.tongue, 0.18],
       ['kiss', this.smoothed.kiss, 0.38],
       ['happy', this.smoothed.happy, 0.46],
+      ['disgust', this.smoothed.disgust, 0.42],
       ['angry', this.smoothed.angry, 0.4],
       ['profile', this.smoothed.profile, 0.52],
       ['blank', this.smoothed.blank, 0.3],

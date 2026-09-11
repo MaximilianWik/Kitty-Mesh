@@ -5,6 +5,7 @@ export type FacePoseId =
   | 'happy'
   | 'kiss'
   | 'angry'
+  | 'disgust'
 
 export type BodyPoseId = 'hands'
 
@@ -14,8 +15,12 @@ export type HandGestureId =
   | 'peace'
   | 'rock'
   | 'thumbs-up'
+  | 'ok'
+  | 'call-me'
 
-export type GestureId = 'idle' | FacePoseId | BodyPoseId | HandGestureId
+export type TwoHandGestureId = 'heart-hands'
+
+export type GestureId = 'idle' | FacePoseId | BodyPoseId | HandGestureId | TwoHandGestureId
 
 export type FingerId = 'thumb' | 'index' | 'middle' | 'ring' | 'pinky'
 
@@ -40,12 +45,16 @@ export interface GestureScores {
   happy: number
   kiss: number
   angry: number
+  disgust: number
   hands: number
   fist: number
   point: number
   peace: number
   rock: number
   'thumbs-up': number
+  ok: number
+  'call-me': number
+  'heart-hands': number
 }
 
 export interface VisionSnapshot {
@@ -111,12 +120,16 @@ export const EMPTY_SCORES: GestureScores = {
   happy: 0,
   kiss: 0,
   angry: 0,
+  disgust: 0,
   hands: 0,
   fist: 0,
   point: 0,
   peace: 0,
   rock: 0,
   'thumbs-up': 0,
+  ok: 0,
+  'call-me': 0,
+  'heart-hands': 0,
 }
 
 export const INITIAL_SNAPSHOT: VisionSnapshot = {

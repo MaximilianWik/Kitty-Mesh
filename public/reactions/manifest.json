@@ -46,5 +46,21 @@
   "rock": {
     "image": "rock.png",
     "audio": "rock.mp3"
+  },
+  "ok": {
+    "image": "ok.jpg",
+    "audio": null
+  },
+  "call-me": {
+    "image": "call-me.png",
+    "audio": null
+  },
+  "disgust": {
+    "image": "disgusted.png",
+    "audio": null
+  },
+  "heart-hands": {
+    "image": "heart-hands.jpg",
+    "audio": null
   }
 }

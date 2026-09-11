@@ -21,6 +21,10 @@ export const REACTIONS: ReactionDefinition[] = [
   { id: 'peace', label: 'Peace sign', prompt: 'Extend your index and middle fingers.', mediaBaseName: 'peace', tone: [349, 523] },
   { id: 'rock', label: 'Rock sign', prompt: 'Extend your index and pinky, with middle and ring fingers folded.', mediaBaseName: 'rock', tone: [196, 294] },
   { id: 'thumbs-up', label: 'Thumbs up', prompt: 'Raise your thumb and fold the other fingers.', mediaBaseName: 'thumbs-up', tone: [392, 587] },
+  { id: 'ok', label: 'OK sign', prompt: 'Touch your thumb and index finger tips together, with the rest extended.', mediaBaseName: 'ok', tone: [349, 466] },
+  { id: 'call-me', label: 'Call me', prompt: 'Extend your thumb and pinky, folding the other fingers.', mediaBaseName: 'call-me', tone: [261, 349] },
+  { id: 'disgust', label: 'Disgust', prompt: 'Wrinkle your nose and pull your lower lip down.', mediaBaseName: 'disgusted', tone: [98, 73] },
+  { id: 'heart-hands', label: 'Heart hands', prompt: 'Bring both hands together with thumbs and index fingers touching.', mediaBaseName: 'heart-hands', tone: [440, 587] },
 ]
 
 export const REACTION_BY_ID = Object.fromEntries(
