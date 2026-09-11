@@ -264,20 +264,20 @@ function App() {
 
   const cameraContent = (
     <div className="camera-workspace">
-      <section className="camera-pane" aria-labelledby="camera-pane-title">
-        <header className="pane-titlebar"><span id="camera-pane-title">camera feed</span><span>{videoSize.width ? `${videoSize.width}x${videoSize.height}` : 'no input'}</span></header>
-        <div className="camera-viewport">
-          <video ref={videoRef} className="camera-video" playsInline muted onLoadedMetadata={(event) => setVideoSize({ width: event.currentTarget.videoWidth, height: event.currentTarget.videoHeight })} />
-          {showMesh && <LandmarkLayer landmarks={landmarks} hands={snapshot.hands} {...videoSize} />}
-          {status !== 'running' && <div className="camera-dialog"><pre aria-hidden="true">{`CAMERA DEVICE\n-------------\nstatus: ${status}`}</pre><p>{statusMessage}</p><button type="button" onClick={() => startCamera()} disabled={isWorking}>{isWorking ? 'Starting...' : status === 'error' ? 'Retry camera' : 'Start camera'}</button></div>}
-          {status === 'running' && <div className="camera-readout"><span>match: {activeLabel}</span><span>face: {snapshot.faceTracked ? 'yes' : 'no'}</span><span>pose: {snapshot.poseTracked ? 'yes' : 'no'}</span><span>hands: {snapshot.hands.length}</span><span>confidence: {Math.round(snapshot.confidence * 100)}%</span></div>}
-        </div>
-        <div className="camera-toolbar"><span>{statusMessage}</span>{status === 'running' && <button type="button" onClick={stopCamera}>Stop camera</button>}<button type="button" onClick={() => setMenu('camera')}>Camera menu</button></div>
-      </section>
-      <div className="camera-sidebar">
-        <RuntimePanel snapshot={snapshot} events={events} />
+      <div className="camera-column">
+        <section className="camera-pane" aria-labelledby="camera-pane-title">
+          <header className="pane-titlebar"><span id="camera-pane-title">camera feed</span><span>{videoSize.width ? `${videoSize.width}x${videoSize.height}` : 'no input'}</span></header>
+          <div className="camera-viewport">
+            <video ref={videoRef} className="camera-video" playsInline muted onLoadedMetadata={(event) => setVideoSize({ width: event.currentTarget.videoWidth, height: event.currentTarget.videoHeight })} />
+            {showMesh && <LandmarkLayer landmarks={landmarks} hands={snapshot.hands} {...videoSize} />}
+            {status !== 'running' && <div className="camera-dialog"><pre aria-hidden="true">{`CAMERA DEVICE\n-------------\nstatus: ${status}`}</pre><p>{statusMessage}</p><button type="button" onClick={() => startCamera()} disabled={isWorking}>{isWorking ? 'Starting...' : status === 'error' ? 'Retry camera' : 'Start camera'}</button></div>}
+            {status === 'running' && <div className="camera-readout"><span>match: {activeLabel}</span><span>face: {snapshot.faceTracked ? 'yes' : 'no'}</span><span>pose: {snapshot.poseTracked ? 'yes' : 'no'}</span><span>hands: {snapshot.hands.length}</span><span>confidence: {Math.round(snapshot.confidence * 100)}%</span></div>}
+          </div>
+          <div className="camera-toolbar"><span>{statusMessage}</span>{status === 'running' && <button type="button" onClick={stopCamera}>Stop camera</button>}<button type="button" onClick={() => setMenu('camera')}>Camera menu</button></div>
+        </section>
         <ReactionPane gesture={snapshot.gesture} confidence={snapshot.confidence} media={reactionMedia} />
       </div>
+      <RuntimePanel snapshot={snapshot} events={events} />
     </div>
   )
 
