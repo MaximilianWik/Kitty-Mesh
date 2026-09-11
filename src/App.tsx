@@ -31,6 +31,7 @@ import mainSource from './main.tsx?raw'
 import gestureEngineTestSource from './test/gesture-engine.test.ts?raw'
 import viteEnvSource from './vite-env.d.ts?raw'
 import stylesSource from './styles.css?raw'
+import readmeSource from '../README.md?raw'
 
 type WindowId = 'camera' | 'signals' | 'help'
 type MenuId = 'file' | 'view' | 'camera' | 'help' | null
@@ -313,14 +314,14 @@ function App() {
         <div className="menu-group"><button type="button" aria-expanded={menu === 'file'} onClick={() => setMenu(menu === 'file' ? null : 'file')}>File</button>{menu === 'file' && <div className="menu-popup"><button type="button" onClick={() => selectWindow('camera')}>Open camera</button><button type="button" onClick={() => { setSourceTabs([]); setActiveWindow('camera'); setMenu(null) }}>Close source windows</button></div>}</div>
         <div className="menu-group"><button type="button" aria-expanded={menu === 'view'} onClick={() => setMenu(menu === 'view' ? null : 'view')}>View</button>{menu === 'view' && <div className="menu-popup"><button type="button" onClick={() => { setShowMesh((value) => !value); setMenu(null) }}>Mesh: {showMesh ? 'on' : 'off'}</button><button type="button" onClick={() => { void toggleAudio(); setMenu(null) }}>Sound: {audioEnabled ? 'on' : 'off'}</button><button type="button" onClick={resetWindows}>Reset windows</button></div>}</div>
         <div className="menu-group"><button type="button" aria-expanded={menu === 'camera'} onClick={() => { void refreshDevices(); setMenu(menu === 'camera' ? null : 'camera') }}>Camera</button>{menu === 'camera' && <div className="menu-popup menu-popup--wide"><button type="button" onClick={() => { if (status === 'running') stopCamera(); else void startCamera(); setMenu(null) }}>{status === 'running' ? 'Stop camera' : 'Start camera'}</button><button type="button" onClick={() => { if (status === 'running') { stopCamera(); window.setTimeout(() => void startCamera(selectedDeviceId, true), 80) } else { void startCamera() } setMenu(null) }}>Restart camera</button><span>Inputs</span>{devices.map((device, index) => <button type="button" className={device.deviceId === selectedDeviceId ? 'is-current' : ''} key={device.deviceId} onClick={() => void changeCamera(device.deviceId)}>{device.label || `Camera ${index + 1}`}</button>)}</div>}</div>
-        <div className="menu-group"><button type="button" aria-expanded={menu === 'help'} onClick={() => setMenu(menu === 'help' ? null : 'help')}>Help</button>{menu === 'help' && <div className="menu-popup"><button type="button" onClick={() => { selectWindow('help'); setMenu(null) }}>About Kitty Mesh</button></div>}</div>
+        <div className="menu-group"><button type="button" aria-expanded={menu === 'help'} onClick={() => setMenu(menu === 'help' ? null : 'help')}>Help</button>{menu === 'help' && <div className="menu-popup"><button type="button" onClick={() => { selectWindow('help'); setMenu(null) }}>About Kitty Mesh</button><button type="button" onClick={() => { window.open('https://github.com/MaximilianWik/Kitty-Mesh', '_blank', 'noopener,noreferrer'); setMenu(null) }}>Source repo ↗</button></div>}</div>
       </nav>
 
       <div className="tab-bar" role="tablist" aria-label="Open windows">
         <button type="button" role="tab" aria-selected={activeWindow === 'camera'} onClick={() => selectWindow('camera')}>camera.ts{floating.camera ? ' [float]' : ''}</button>
         <button type="button" role="tab" aria-selected={activeWindow === 'signals'} onClick={() => selectWindow('signals')}>signals.watch{floating.signals ? ' [float]' : ''}</button>
         {sourceTabs.map((tab) => <button type="button" role="tab" aria-selected={activeWindow === tab.id} key={tab.id} onClick={() => selectSource(tab.id)}>{tab.fileName}{tab.floating ? ' [float]' : ''}</button>)}
-        {activeWindow === 'help' && <button type="button" role="tab" aria-selected onClick={() => selectWindow('help')}>about-kitty-mesh.txt</button>}
+        <button type="button" role="tab" aria-selected={activeWindow === 'help'} onClick={() => selectWindow('help')}>about-kitty-mesh.txt{floating.help ? ' [float]' : ''}</button>
       </div>
 
       <div className="ide-workspace">
@@ -353,7 +354,7 @@ function App() {
           <DesktopWindow id="camera-window" title="camera.ts" floating={floating.camera} visible={floating.camera || activeWindow === 'camera'} zIndex={zOrder.camera} initialPosition={{ x: 205, y: 110, width: 780, height: 650 }} onActivate={() => raiseWindow('camera')} onToggleFloating={() => toggleFloating('camera')}>{cameraContent}</DesktopWindow>
           <DesktopWindow id="signals-window" title="signals.watch" floating={floating.signals} visible={floating.signals || activeWindow === 'signals'} zIndex={zOrder.signals} initialPosition={{ x: 470, y: 155, width: 560, height: 460 }} onActivate={() => raiseWindow('signals')} onToggleFloating={() => toggleFloating('signals')}><GestureRail active={snapshot.gesture} candidate={snapshot.candidate} scores={snapshot.scores} hands={snapshot.hands} /></DesktopWindow>
           {sourceTabs.map((tab, index) => <DesktopWindow id={tab.id} title={tab.fileName} floating={tab.floating} visible={tab.floating || activeWindow === tab.id} zIndex={tab.zIndex} initialPosition={{ x: 420 + index * 24, y: 150 + index * 24, width: 760, height: 620 }} onActivate={() => raiseSource(tab.id)} onToggleFloating={() => toggleSourceFloating(tab.id)} key={tab.id}><SourceViewer fileName={tab.fileName} source={sourceByName.get(tab.fileName) ?? ''} onClose={() => closeSource(tab.id)} /></DesktopWindow>)}
-          <DesktopWindow id="help-window" title="about-kitty-mesh.txt" floating={floating.help} visible={floating.help || activeWindow === 'help'} zIndex={zOrder.help} initialPosition={{ x: 520, y: 210, width: 500, height: 360 }} onActivate={() => raiseWindow('help')} onToggleFloating={() => toggleFloating('help')}><HelpPane onClose={() => selectWindow('camera')} /></DesktopWindow>
+          <DesktopWindow id="help-window" title="about-kitty-mesh.txt" floating={floating.help} visible={floating.help || activeWindow === 'help'} zIndex={zOrder.help} initialPosition={{ x: 520, y: 210, width: 500, height: 360 }} onActivate={() => raiseWindow('help')} onToggleFloating={() => toggleFloating('help')}><HelpPane source={readmeSource} onClose={() => selectWindow('camera')} /></DesktopWindow>
         </div>
       </div>
       <footer className="status-bar"><span>{status.toUpperCase()}</span><span>match: {activeLabel}</span><span>fps: {snapshot.fps.toFixed(0)}</span><span>hands: {snapshot.hands.length}</span><span>latency: {snapshot.latencyMs.toFixed(0)}ms</span><span>MediaPipe / local</span></footer>

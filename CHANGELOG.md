@@ -1,5 +1,16 @@
 # Changelog
 
+## 0.5.8 · 2026-09-11
+
+### Added
+
+- Added "Source repo ↗" to the Help menu, opening https://github.com/MaximilianWik/Kitty-Mesh in a new tab.
+- about-kitty-mesh.txt is now always present in the tab bar, like camera.ts and signals.watch, instead of only appearing once opened.
+
+### Changed
+
+- about-kitty-mesh.txt now renders the real bundled README.md content (via a raw import) instead of a hand-written summary, so the two never drift.
+
 ## 0.5.7 · 2026-09-11
 
 ### Fixed

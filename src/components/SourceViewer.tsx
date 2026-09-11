@@ -20,16 +20,11 @@ export function SourceViewer({ fileName, source, onClose }: SourceViewerProps) {
   )
 }
 
-export function HelpPane({ onClose }: { onClose: () => void }) {
+export function HelpPane({ source, onClose }: { source: string; onClose: () => void }) {
   return (
     <section className="help-pane" aria-label="Kitty Mesh help">
       <header className="pane-titlebar"><span>about-kitty-mesh.txt</span><button type="button" onClick={onClose}>close</button></header>
-      <div>
-        <h1>Kitty Mesh =^..^=</h1>
-        <p>Local webcam face, body, and hand tracking built with MediaPipe.</p>
-        <p>Frames stay in this browser. No camera frames are sent to Kitty Mesh.</p>
-        <p>Click Explorer files to inspect the real bundled source. Use Camera to choose an input or stop tracking.</p>
-      </div>
+      <pre className="help-pane__readme">{source.replaceAll('\r\n', '\n')}</pre>
     </section>
   )
 }
