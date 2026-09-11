@@ -27,10 +27,6 @@
     "image": "hands.jpg",
     "audio": null
   },
-  "open-palm": {
-    "image": null,
-    "audio": null
-  },
   "fist": {
     "image": "fist.jpg",
     "audio": "fist.mp3"

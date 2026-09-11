@@ -44,7 +44,6 @@ export function analyzeHands(
   handedness: string[] = [],
 ): { observations: HandObservation[]; scores: Pick<GestureScores, HandGestureId> } {
   const scores: Pick<GestureScores, HandGestureId> = {
-    'open-palm': 0,
     fist: 0,
     point: 0,
     peace: 0,
@@ -80,15 +79,12 @@ export function analyzeHands(
     let gesture: HandObservation['gesture'] = 'unclassified'
     let confidence = 0.5
 
-    if (extended === 5) {
-      gesture = 'open-palm'
-      confidence = 0.95
-    } else if (extended === 0) {
+    if (extended === 0) {
       gesture = 'fist'
       confidence = 0.9
-    } else if (fingers.index && !fingers.middle && !fingers.ring && !fingers.pinky && !fingers.thumb) {
+    } else if (fingers.index && !fingers.middle && !fingers.ring && !fingers.pinky) {
       gesture = 'point'
-      confidence = 0.92
+      confidence = fingers.thumb ? 0.85 : 0.92
     } else if (fingers.index && fingers.middle && !fingers.ring && !fingers.pinky) {
       gesture = 'peace'
       confidence = fingers.thumb ? 0.76 : 0.94
@@ -271,7 +267,6 @@ export class GestureEngine {
     kiss: 0,
     angry: 0,
     hands: 0,
-    'open-palm': 0,
     fist: 0,
     point: 0,
     peace: 0,
@@ -291,7 +286,6 @@ export class GestureEngine {
       ['thumbs-up', this.smoothed['thumbs-up'], 0.62],
       ['point', this.smoothed.point, 0.62],
       ['fist', this.smoothed.fist, 0.62],
-      ['open-palm', this.smoothed['open-palm'], 0.62],
       ['tongue', this.smoothed.tongue, 0.18],
       ['kiss', this.smoothed.kiss, 0.38],
       ['happy', this.smoothed.happy, 0.46],

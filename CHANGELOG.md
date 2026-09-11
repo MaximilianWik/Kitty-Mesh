@@ -1,5 +1,16 @@
 # Changelog
 
+## 0.6.0 · 2026-09-11
+
+### Removed
+
+- Removed the open-palm gesture entirely (detection branch, scores, reactions, media manifest, tests, docs). Five fingers extended now reports as unclassified instead of triggering a reaction.
+
+### Changed
+
+- Point detection no longer requires the thumb to be folded. It now fires with the index finger extended alone, or with the index finger and thumb both extended.
+- Replaced the happy reaction audio with a newly supplied cut.
+
 ## 0.5.9 · 2026-09-11
 
 ### Fixed

@@ -1,6 +1,6 @@
 # Kitty Mesh =^..^=
 
-Kitty Mesh is a browser-only computer vision cockpit. It runs three MediaPipe Tasks Vision models (face, pose, hand) against your webcam entirely on-device, classifies the result into one of thirteen states through a hand-rolled scoring and stabilization pipeline, and renders the whole thing as a fake retro IDE. No backend, no upload, no telemetry. Just whiskers and WASM.
+Kitty Mesh is a browser-only computer vision cockpit. It runs three MediaPipe Tasks Vision models (face, pose, hand) against your webcam entirely on-device, classifies the result into one of twelve states through a hand-rolled scoring and stabilization pipeline, and renders the whole thing as a fake retro IDE. No backend, no upload, no telemetry. Just whiskers and WASM.
 
 ## ( ^ω^ ) Inference pipeline
 
@@ -20,7 +20,7 @@ Face runs every tick because expression state is the most latency-sensitive sign
 - **Profile** comes from nose-to-eye-line yaw, normalized by inter-eye distance.
 - **Blank** is `1 − max(expressive activity) × 1.55 − profile × 0.45`, i.e. the least interesting frame wins.
 - **Hands up** needs both wrists above both shoulders by a visibility-gated margin, scored by how far above.
-- **Hand shapes** (open palm, fist, point, peace, rock, thumbs-up) come from joint angles at each finger's MCP–PIP–tip, plus a thumb-specific angle/extension check. Rock is index+pinky extended with middle/ring folded; peace is index+middle. Geometry, not a trained classifier, so an oddly angled hand can need a squint to convince it.
+- **Hand shapes** (fist, point, peace, rock, thumbs-up) come from joint angles at each finger's MCP–PIP–tip, plus a thumb-specific angle/extension check. Point is the index finger extended alone, with the thumb either folded or extended. Rock is index+pinky extended with middle/ring folded; peace is index+middle. Geometry, not a trained classifier, so an oddly angled hand can need a squint to convince it.
 
 Every score is exponentially smoothed (`smoothed = smoothed × 0.52 + incoming × 0.48`) before ranking, so a single noisy frame can't flip the state.
 
@@ -28,7 +28,7 @@ Every score is exponentially smoothed (`smoothed = smoothed × 0.52 + incoming �
 
 `GestureEngine.update` walks a fixed priority list, from `hands` down to `blank`, and picks the first score that clears its own threshold (0.18 for tongue up to 0.62 for hand shapes — face states get lower bars, hand geometry gets stricter ones). The winning candidate then has to survive `GestureStabilizer`: a candidate must hold for ≥120ms (420ms for blank, so a resting face doesn't flicker) and the stabilizer enforces a 160ms cooldown between any two committed transitions. This is why the state you see never chatters even though scores are computed 30 times a second.
 
-## ( ・ω・)✿ Thirteen states it hunts for
+## ( ・ω・)✿ Twelve states it hunts for
 
 | State | Signal |
 | --- | --- |
@@ -39,9 +39,8 @@ Every score is exponentially smoothed (`smoothed = smoothed × 0.52 + incoming �
 | Kiss face | Mouth pucker + funnel blendshapes |
 | Angry face | Brow-down + nose-sneer + eye-squint + mouth-press |
 | Hands up | Both wrists above both shoulders |
-| Open palm | All five fingers extended |
 | Closed fist | All five fingers folded |
-| Point | Only the index finger extended |
+| Point | Index finger extended, thumb folded or extended |
 | Peace sign | Index + middle extended |
 | Rock sign | Index + pinky extended, middle/ring folded |
 | Thumbs up | Thumb extended, pointing above the wrist |

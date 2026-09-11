@@ -9,7 +9,6 @@ export type FacePoseId =
 export type BodyPoseId = 'hands'
 
 export type HandGestureId =
-  | 'open-palm'
   | 'fist'
   | 'point'
   | 'peace'
@@ -42,7 +41,6 @@ export interface GestureScores {
   kiss: number
   angry: number
   hands: number
-  'open-palm': number
   fist: number
   point: number
   peace: number
@@ -114,7 +112,6 @@ export const EMPTY_SCORES: GestureScores = {
   kiss: 0,
   angry: 0,
   hands: 0,
-  'open-palm': 0,
   fist: 0,
   point: 0,
   peace: 0,
