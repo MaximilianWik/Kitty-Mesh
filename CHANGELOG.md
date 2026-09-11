@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.5.4 · 2026-09-11
+
+### Changed
+
+- Locked camera.ts pane geometry to the manual splitter state. Camera frames, landmarks, reaction images, and runtime content now fit and clip inside their allocated grid tracks instead of contributing intrinsic minimum sizes that can resize the workbench.
+
 ## 0.5.3 · 2026-09-11
 
 ### Added
