@@ -1,5 +1,7 @@
 # Kitty Mesh =^..^=
 
+**Live:** [kittymesh.vercel.app](https://kittymesh.vercel.app/) · **Source:** [github.com/MaximilianWik/Kitty-Mesh](https://github.com/MaximilianWik/Kitty-Mesh) · Built by [Maximilian Wikström](https://maximilian-wikstrom.vercel.app/)
+
 Kitty Mesh is a browser-only computer vision cockpit. It runs three MediaPipe Tasks Vision models (face, pose, hand) against your webcam entirely on-device, classifies the result into one of twelve states through a hand-rolled scoring and stabilization pipeline, and renders the whole thing as a fake retro IDE. No backend, no upload, no telemetry. Just whiskers and WASM.
 
 ## ( ^ω^ ) Inference pipeline
