@@ -144,6 +144,7 @@ function App() {
     if (audioUrl) {
       void playReactionAudio(audioUrl).catch(() => undefined)
     } else {
+      stopReactionAudio()
       playReactionTone(reaction.tone)
     }
     previousGesture.current = snapshot.gesture

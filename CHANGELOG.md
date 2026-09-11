@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.5.7 · 2026-09-11
+
+### Fixed
+
+- Stop the previous reaction's mapped MP3 when switching directly to any state that has no mapped audio (blank, hands, open-palm, peace), not just when returning to idle. It previously kept playing underneath the new synthesized tone.
+
 ## 0.5.6 · 2026-09-11
 
 ### Changed
